@@ -1,0 +1,18 @@
+{
+  "id": "bhack",
+  "name": "Bhack",
+  "shortName": "Bhack",
+  "version": "0.01",
+  "description": "Small roguelike game.",
+  "allow_emulator":true,
+  "icon": "bhack.png",
+  "type": "app",
+  "tags": "game",
+  "screenshots": [],
+  "supports": ["BANGLEJS2"],
+  "readme": "README.md",
+  "storage": [
+    {"name":"bhack.app.js","url":"app.js"},
+    {"name":"bhack.img","url":"app-icon.js","evaluate":true}
+  ]
+}
