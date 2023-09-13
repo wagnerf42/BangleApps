@@ -4,6 +4,9 @@ const UP = 1;
 const DOWN = 2;
 const RIGHT = 3;
 
+const INTRO_SCREEN=0;
+const MAIN_SCREEN=1;
+
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
 }
@@ -50,8 +53,8 @@ let s = require("Storage");
 // generate a new room coordinates, not touching any existing ones
 function generate_room(width, height) {
   // while (true) {
-  let room_width = randint(3, 7);
-  let room_height = randint(3, 7);
+  let room_width = randint(3, 5);
+  let room_height = randint(3, 5);
   let sx = randint(2, width - room_width - 2);
   let sy = randint(2, height - room_height - 2);
   return [sx, sy, room_width, room_height];
@@ -88,6 +91,11 @@ const MONSTERS_IMAGES = [
 const KNIGHT = 1;
 const FLOOR = 848;
 const NEWT = 2;
+const EXIT = 100;
+
+const MISC_IMAGES = [
+  require("heatshrink").decompress(atob("kEgggjgmYAMB63/AAQPWiIADB4YIEB6WqogvHomqB6WqB4fuBwPuB4eqB6IvBAAQwCmYHDH4gPNAYURGIIPCogICH4YPOAYQPBogPBAYIPBH4oPNMYYABB4IFDP4oPNAgICBF4oKEB6ADBAILODGIQKDB6AAEBwgAKB55vGB7IA4"))
+];
 
 let HORIZONTAL_BORDER_IMAGE = require("heatshrink").decompress(
   atob(
@@ -99,7 +107,6 @@ let VERTICAL_BORDER_IMAGE = require("heatshrink").decompress(
     "kEgwkCmf/AIdEBoQDBiIDCB+AABB4MzB4YNBAIYPZCIYABB7JNDH5oPEN5APYGIRvKB7QDDB7LfIB57//f/7//f7gA=="
   )
 );
-// images are tiles numbers : 832, 835, 833
 const BORDER_IMAGES = [
   // ROCK
   require("heatshrink").decompress(
@@ -200,6 +207,8 @@ class Creature {
       this.attack_modifier = 4;
       this.speed = 6;
       this.damages = [1, 6, 0];
+      this.satiation = 1000;
+      this.gold = 0;
     } else if (monster_type == NEWT) {
       this.hp = 4;
       this.ac = 10;
@@ -268,7 +277,7 @@ class Creature {
       } else {
         msg = target.name() + " hit(" + damages + ")";
         if (target.monster_type == KNIGHT) {
-          game.display_hp();
+          game.display_stats();
         }
       }
     } else {
@@ -300,12 +309,17 @@ class Map {
     }
     console.log("creating corridors");
     this.generate_corridors(rooms);
+    this.fill_borders();
+
     let first_room = rooms[0];
     player.x = randint(first_room[0], first_room[0] + first_room[2] - 1);
     player.y = randint(first_room[1], first_room[1] + first_room[3] - 1);
     this.set_cell([player.x, player.y], KNIGHT);
+    let last_room = rooms[rooms.length-1];
+    let exit_x = randint(last_room[0], last_room[0] + last_room[2] - 1);
+    let exit_y = randint(last_room[1], last_room[1] + last_room[3] - 1);
+    this.set_cell([exit_x, exit_y], EXIT);
     this.generate_monsters(rooms, monsters, player);
-    this.fill_borders();
   }
 
   // return if given position has a tile type which can be walked upon
@@ -317,11 +331,11 @@ class Map {
     return tile != 0 && (tile < 200 || tile > 300);
   }
   fill_borders() {
-    console.log("start", this.width, this.height);
-    let w = this.width;
-    let neighbours = Int8Array([-w - 1, -w, -w + 1, -1, 1, w - 1, w, w + 1]);
     let map = this.map;
+    let w = this.width;
+    console.log("start", this.width, this.height);
     let start = getTime();
+    let neighbours = Int8Array([-w - 1, -w, -w + 1, -1, 1, w - 1, w, w + 1]);
     // first, figure out which tiles are on the border
     for (let y = 1; y < this.height - 1; y++) {
       let p = y * w;
@@ -398,19 +412,9 @@ class Map {
     let y = position[1];
     return this.map[y * this.width + x];
   }
-  get_cell2(position) {
-    return this.map[position.y * this.width + position.x];
-  }
-  get_cell3(x, y) {
-    return this.map[y * this.width + x];
-  }
   valid_position(position) {
     let x = position[0];
     let y = position[1];
-    return x >= 0 && x < this.width && y >= 0 && y < this.height;
-  }
-
-  valid_position3(x, y) {
     return x >= 0 && x < this.width && y >= 0 && y < this.height;
   }
   generate_corridors(rooms) {
@@ -462,6 +466,8 @@ class Map {
           g.drawImage(floor_img, (x + 2) * 32, (y + 2) * 32);
         } else if (content >= 200) {
           g.drawImage(BORDER_IMAGES[content - 200], (x + 2) * 32, (y + 2) * 32);
+        } else if (content >= 100) {
+          g.drawImage(MISC_IMAGES[content - 100], (x + 2) * 32, (y + 2) * 32);
         } else {
           g.drawImage(MONSTERS_IMAGES[content], (x + 2) * 32, (y + 2) * 32);
         }
@@ -481,23 +487,32 @@ class Game {
     this.locked = false;
     this.monsters = [];
     this.player = new Creature(KNIGHT);
-    this.map = new Map(30, 30, this.monsters, this.player);
+    this.screen = INTRO_SCREEN;
     this.time = 0;
+    this.dungeon_level = 1;
     Bangle.setLocked(false);
   }
-  display() {
-    this.map.display();
+  start() {
+    this.map = new Map(30, 30, this.monsters, this.player);
+    this.screen = MAIN_SCREEN;
   }
-  display_hp() {
+  display() {
+    if (this.screen == INTRO_SCREEN) {
+      g.clear();
+    } else {
+      this.map.display();
+      this.display_stats();
+    }
+  }
+  display_stats() {
     let hp_y =
       g.getHeight() -
       Math.round((this.player.hp * g.getHeight()) / this.player.max_hp);
+    let satiation_y = g.getHeight() - Math.round((this.player.satiation *g.getHeight())/1000);
+    let left_width = g.getWidth() - 5 * 32;
     g.setColor(0, 0, 0).fillRect(5 * 32, 0, g.getWidth(), g.getHeight());
-    g.setColor(1, 0, 0).fillRect(5 * 32, hp_y, g.getWidth(), g.getHeight());
-    g.setFont("4x6:2")
-      .setColor(0, 0, 0)
-      .setFontAlign(-1, 1, 0)
-      .drawString(this.player.hp, 5 * 32, g.getHeight());
+    g.setColor(1, 0, 0).fillRect(5 * 32, hp_y, 5 * 32 + left_width/2, g.getHeight());
+    g.setColor(0, 0, 1).fillRect(5 * 32 + left_width/2, satiation_y, g.getWidth(), g.getHeight());
   }
   attack(position) {
     let monster = this.monsters.find(
@@ -510,10 +525,22 @@ class Game {
     if (!this.map.walkable(destination)) {
       return;
     }
+    if (this.player.satiation > 0) {
+      this.player.satiation -= 1;
+    } else {
+      this.player.hp -= 1;
+    }
     let destination_content = this.map.get_cell(destination);
-    if (destination_content < 200) {
+    if (destination_content < 100) {
       // attack
       this.attack(destination);
+    } else if (destination_content == 100) {
+      // we go down to next level
+      this.dungeon_level += 1;
+      this.monsters = [];
+      this.start();
+      this.display();
+      g.setColor(0, 0, 0).fillRect(0, 32 * 5, 32 * 5, g.getHeight());
     } else {
       // move
       this.map.move(game.player, destination);
@@ -541,13 +568,16 @@ class Game {
 
 let game = new Game();
 
-g.setBgColor(0, 0, 0);
-g.clear();
-game.display();
-game.display_hp();
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked) {
+    return;
+  }
+  if (game.screen == INTRO_SCREEN) {
+    game.start();
+    g.setBgColor(0, 0, 0);
+    g.clear();
+    game.display();
     return;
   }
   let half_width = g.getWidth() / 2;
