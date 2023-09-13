@@ -4,8 +4,9 @@ const UP = 1;
 const DOWN = 2;
 const RIGHT = 3;
 
-const INTRO_SCREEN=0;
-const MAIN_SCREEN=1;
+const INTRO_SCREEN = 0;
+const MAIN_SCREEN = 1;
+const DIED_SCREEN = 2;
 
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
@@ -32,7 +33,7 @@ Bangle.setOptions({
   backlightTimeout: 60000,
 });
 
-let s = require("Storage");
+let h = require("heatshrink");
 
 // // check if the intervals touch
 // function coordinates_touch(x1, w1, x2, w2) {
@@ -72,18 +73,25 @@ function generate_room(width, height) {
   // }
 }
 
-const MONSTERS = [undefined, "Player", "Newt"];
-// images are tiles numbers : 340, 326
+const MONSTERS = [undefined, "Player", "Newt", "Ant"];
 const MONSTERS_IMAGES = [
   undefined,
-  require("heatshrink").decompress(
+  // knith (img 340)
+  h.decompress(
     atob(
       "kEggmqiIACgFEAAIEBBIeqB58RokzmYOBmf/AoIQBAYIVBB6AOCBAIOCGIIPCCgIPRAwJJEHAIPX/4wCAoPdJ4YPX93uGoQACB63dFIXdKoQPVFIVVAAK0BCAIPVAALPDogCBJ4wPPJIILCB4IBBB6xKBegVEJgPdBAIPTSAQGCdwVVN4oPRAAcRNwgPSE4JHBFATtEKoQPP1QLBAAbMCqqXCBwIPPgAQBAAhUFBwIPP"
     )
   ),
-  require("heatshrink").decompress(
+  // newt (img 326)
+  h.decompress(
     atob(
       "kEggmqiIAM1QPPiNEmYAKogRBB54HEJwoICB6sAqvdAgPdqoQCB6gOBFoYTBCAQPVJIYFBGIIPXCYlVB7ANEOIJPIB6CffBoYOBK4YPTBwlVWYRvGB5wOCAQJLCAIQPVNgIoBFggACB6NEEwQKCeYtEB6GqCAIAKBwIPPgAQBABQOBB54A=="
+    )
+  ),
+  // ant (img 0)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54JGJwYGCB6YIDgHd93diIHCB6YRDiPu91VqoPUJAgPC7tVF4oPPNg8RFwYPTBgZtCeAgPSRgxNEK4QPQJoqMBPAQPVgH/qotBBAINDN4oPPmYsB/6zDCAYPSIgVVBgoPUohwERYYDCogPQ1QQBAA0AAYQOBB58ACAIAKBwIPP"
     )
   ),
 ];
@@ -91,25 +99,59 @@ const MONSTERS_IMAGES = [
 const KNIGHT = 1;
 const FLOOR = 848;
 const NEWT = 2;
+const ANT = 3;
 const EXIT = 100;
+const FOOD = 101;
+const GOLD = 102;
+const LIFE_POTION = 103;
+const TOMBSTONE = 104;
 
 const MISC_IMAGES = [
-  require("heatshrink").decompress(atob("kEgggjgmYAMB63/AAQPWiIADB4YIEB6WqogvHomqB6WqB4fuBwPuB4eqB6IvBAAQwCmYHDH4gPNAYURGIIPCogICH4YPOAYQPBogPBAYIPBH4oPNMYYABB4IFDP4oPNAgICBF4oKEB6ADBAILODGIQKDB6AAEBwgAKB55vGB7IA4"))
+  // exit (img 852)
+  h.decompress(
+    atob(
+      "kEgggjgmYAMB63/AAQPWiIADB4YIEB6WqogvHomqB6WqB4fuBwPuB4eqB6IvBAAQwCmYHDH4gPNAYURGIIPCogICH4YPOAYQPBogPBAYIPBH4oPNMYYABB4IFDP4oPNAgICBF4oKEB6ADBAILODGIQKDB6AAEBwgAKB55vGB7IA4"
+    )
+  ),
+  // food (img 660)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiImCmYAIogRBB6FVB4RNECAYPSBgIBBs3u913swQDB6EA/8zxAOGGIYPRAYIPBogNDqpYBBgIPR/4wBNgdV7vumfdCIIPWBoMzBwQ6BGQQPPVgQNGGAgPQxAPCCAQsCBoNVfoQPOCIQDBBAIRBBoQOB1QPRJ4WqCAWqBwwPSR4QRBB4INCZ4QPQogQCCIYNDmdEB6ApBogAEBoIFDBwIPPJQQAKGgQPOA="
+    )
+  ),
+  // gold (img 786)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYoCmYAGogRBB54OB93/9wQCCooPTBwPdBQIVGB6YADCowPU7ovECogPUAAw/MB5YvDNoY/LB5YADNoYPXF4YTFCAIPSGAhTEOAQPSNYyvJB55rDaYgACB6NEJ4YDEAAVEB6GqCAIAKBwIPPgAQBABQOBB54A=="
+    )
+  ),
+  // life potion (img 664)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
+    )
+  ),
+  // tombstone (img 856)
+  h.decompress(
+    atob(
+      "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA"
+    )
+  ),
 ];
 
-let HORIZONTAL_BORDER_IMAGE = require("heatshrink").decompress(
+let HORIZONTAL_BORDER_IMAGE = h.decompress(
   atob(
     "kEgghC/AD8RAD0zAAQEB///A7VEEggHWogACA4IFDA6p/fPbwHCOZgPSPbIHEf/6Def/4A=="
   )
 );
-let VERTICAL_BORDER_IMAGE = require("heatshrink").decompress(
+let VERTICAL_BORDER_IMAGE = h.decompress(
   atob(
     "kEgwkCmf/AIdEBoQDBiIDCB+AABB4MzB4YNBAIYPZCIYABB7JNDH5oPEN5APYGIRvKB7QDDB7LfIB57//f/7//f7gA=="
   )
 );
 const BORDER_IMAGES = [
   // ROCK
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEggmqiIADBogID1QPPiNEmczBQPdAgPdqsAAgNECIIPPBwURBwQQGB6QsCqoQEqoQCB6JLDBQJICqoKBAIQPPgFVJYoCBBgQwBB6IuDBwNENoQOBGQQPQBIItDKIIuDB6bQB7pKBVgYABBwOqB6IEBRIXdohOCFgIOBP4QPPFwItCNo4PQUA4XBB4QvCB6EzaITOEF4czB6NECAQPBGAYOCogPQ1QQBohrEJgQJBAgIPPUYIJBQ4QADBATPCB5w"
     )
@@ -118,7 +160,7 @@ const BORDER_IMAGES = [
   HORIZONTAL_BORDER_IMAGE,
   //  *
   // **
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEgggIF1QDCokAiIDCB6oADB7oxDB4IBBB58RABYTDB50zAAURmf//4GDKIYPSogPBAAYGBB6dEAAQPBAoYGBOIYPPN5hxCB6BrFOYZxFB6BsGOI4PQNYhzFOIYPPADzvKA4IFBB6xzIB6DvKA4YPQf74A=="
     )
@@ -126,7 +168,7 @@ const BORDER_IMAGES = [
   HORIZONTAL_BORDER_IMAGE,
   // *
   // **
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEggkz/4BEBYOqCQoPYAAwPQAAINBAAItGB6tEiIAJB6YEB/4zDmYHGB5oBCEgYACGwIFDB6InCogAEA4YPRNpZvCB6BtFOY4PTNZAPTNoxzHB55tNAAIPPM4RrIA4YPRNZAHEB6JrJBY4PLgBuOB54="
     )
@@ -134,7 +176,7 @@ const BORDER_IMAGES = [
   HORIZONTAL_BORDER_IMAGE,
   //  *
   // ***
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEgggIF1QCEABIPPAHMRAD0zAAQEB///A7VEEggHWogACA4IFDA6p/fPbwHCOZgPSPbIHEf/6Def/4A="
     )
@@ -143,7 +185,7 @@ const BORDER_IMAGES = [
   VERTICAL_BORDER_IMAGE,
   // **
   //  *
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEgggqn1UAiIBEB64ABB6sRAAgtBCIoDCB50zAAVEAIINEAoIDBB99EAAQRCN5APPNocz/4PFCYgPOJoYPFJogPwNoZPHP4oPNNoaPFf44PNFoavHb4wPMNoZPHB6YvCN5gPQJoTvMB5wA=="
     )
@@ -151,7 +193,7 @@ const BORDER_IMAGES = [
   //  *
   // **
   //  *
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEgggIF1QDCokAiIDCB6oADB78R1QPBAYIPPiIAECwoPBAYQPOmYACogBBOYgFBAYIPZNoYDBB59EAAQRCB4hxDB55tDmf/B4oTEB5xNDB4ptDAYIPbOIYPPNoZvGd4gPPNoYPFf44PNFgQPGNobfEB5htDV44PTNoYPHOIYPQJoTvMB5wA="
     )
@@ -159,7 +201,7 @@ const BORDER_IMAGES = [
 
   // **
   // *
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEggkRmYADogSIB58z/4BDomqB7AABB4IvLB6+qiIAEB7AqD/4KCB55vFB4dETQgPRAYQPDiIQBAAQPbN4gPYAYQMDB6JvGAYRxDB56vIJ4RxCB7JxFB7ItCeYYPPN5APEZ4YPPZ5IBCB7YDDB54"
     )
@@ -168,7 +210,7 @@ const BORDER_IMAGES = [
   // *
   // **
   // *
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEggkz/4BDogLB1QSFB7AAGB6AABB4MzB8WqiIAEB7AqD/4KCB55vJDYYPTAYQPDiMAogACB7IDBN4gPabgYPSN4wDCJoIPRV5BvBOIYPZOIoPZFoTTFB5pvIB4jPDB57vIAIYPbAYYPPA=="
     )
@@ -176,7 +218,7 @@ const BORDER_IMAGES = [
 
   // ***
   //  *
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEgghC/AD8RAAmqBAOqBIoPPmYACogBBFQYIB///BwYPZAAwPLogACAoRpDgALDB55jE/4PFPo4PLJoYPFAYQIBLogPYBQQPPNoZPIOIgPNNoaPFOJAPMJoavIOIQPUJ4xxDB56RDN5IBBB6DCDB4wDDB54="
     )
@@ -185,7 +227,7 @@ const BORDER_IMAGES = [
   //  *
   // ***
   //  *
-  require("heatshrink").decompress(
+  h.decompress(
     atob(
       "kEgggIF1QCEABIPPAHMRAAhPDBIoPPmYACogBBFQYIB///BwYPXAwIAGB5dEAAQFCNIYQBAAwPLMYn/B4p9HB5ZNDB4oDCBAJdEB7BxFB5htDN45xFB5ptDB4pxIB5gsCB4wtCeYYPONoavHOIYPPGAbPIAIQPQYQYPGAYYPPA=="
     )
@@ -193,11 +235,16 @@ const BORDER_IMAGES = [
 ];
 
 // brightness 0, contrast 70
-let floor_img = require("heatshrink").decompress(
+let floor_img = h.decompress(
   atob(
     "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP/B/4P/B/4P/B6NEBxdEB6GqCAIAKBwIPPgAQBABQOBB54="
   )
 );
+
+function random_monster() {
+  // TODO: use dungeon level
+  return randint(NEWT, ANT);
+}
 
 class Creature {
   constructor(monster_type, x, y) {
@@ -215,6 +262,12 @@ class Creature {
       this.attack_modifier = 4;
       this.speed = 8;
       this.damages = [1, 4, 0];
+    } else if (monster_type == ANT) {
+      this.hp = 6;
+      this.ac = 10;
+      this.attack_modifier = 8;
+      this.speed = 10;
+      this.damages = [1, 3, 0];
     } else {
       console.log("unknown monster");
     }
@@ -222,6 +275,15 @@ class Creature {
     this.x = x;
     this.y = y;
     this.monster_type = monster_type;
+    this.regeneration = 100;
+  }
+  treasure() {
+    // let's have a 40% change of dropping something
+    if (Math.random() < 0.4) {
+      return [FOOD, GOLD, LIFE_POTION][randint(0, 1, 2)];
+    } else {
+      return FLOOR;
+    }
   }
   name() {
     return MONSTERS[this.monster_type];
@@ -235,7 +297,7 @@ class Creature {
       // we are just beside player, attack
       this.attack(game.player, [player_x, player_y]);
     } else {
-      if (this.monster_type == NEWT) {
+      if (this.monster_type <= 3) {
         if (xdiff * ydiff < 9) {
           let destination = [this.x, this.y];
           if (xdiff <= ydiff) {
@@ -261,6 +323,7 @@ class Creature {
     }
   }
   attack(target, position) {
+    let msg;
     if (randint(1, 20) + this.attack_modifier >= target.ac) {
       // attack success
       let damages = this.damages[2];
@@ -268,11 +331,16 @@ class Creature {
         damages += randint(1, this.damages[1]);
       }
       target.hp -= damages;
-      if (target.hp < 0) {
+      if (target.hp <= 0) {
         // we kill it
-        msg = target.name() + " killed";
         game.monsters = game.monsters.filter((m) => m.hp > 0);
-        game.map.set_cell(position, FLOOR);
+        if (target.monster_type == KNIGHT) {
+          game.map.set_cell(position, TOMBSTONE);
+          msg = "You die";
+        } else {
+          game.map.set_cell(position, target.treasure());
+          msg = target.name() + " dies";
+        }
         game.display();
       } else {
         msg = target.name() + " hit(" + damages + ")";
@@ -282,13 +350,13 @@ class Creature {
       }
     } else {
       // attack miss
-      msg = target.name() + " missed";
+      if (target.monster_type != KNIGHT) {
+        msg = "you miss";
+      } else {
+        msg = target.name() + " missed";
+      }
     }
-    g.setColor(0, 0, 0).fillRect(0, 32 * 5, 32 * 5, g.getHeight());
-    g.setColor(1, 1, 1)
-      .setFont("6x8:2")
-      .setFontAlign(-1, 1, 0)
-      .drawString(msg, 0, g.getHeight());
+    game.message(msg);
   }
 }
 
@@ -315,7 +383,7 @@ class Map {
     player.x = randint(first_room[0], first_room[0] + first_room[2] - 1);
     player.y = randint(first_room[1], first_room[1] + first_room[3] - 1);
     this.set_cell([player.x, player.y], KNIGHT);
-    let last_room = rooms[rooms.length-1];
+    let last_room = rooms[rooms.length - 1];
     let exit_x = randint(last_room[0], last_room[0] + last_room[2] - 1);
     let exit_y = randint(last_room[1], last_room[1] + last_room[3] - 1);
     this.set_cell([exit_x, exit_y], EXIT);
@@ -391,8 +459,9 @@ class Map {
         nx = randint(room[0], room[0] + room[2] - 1);
       }
       let ny = randint(room[1], room[1] + room[3] - 1);
-      monsters.push(new Creature(NEWT, nx, ny));
-      this.set_cell([nx, ny], NEWT);
+      let monster_type = random_monster();
+      monsters.push(new Creature(monster_type, nx, ny));
+      this.set_cell([nx, ny], monster_type);
     }
   }
   fill_room(room) {
@@ -492,13 +561,23 @@ class Game {
     this.dungeon_level = 1;
     Bangle.setLocked(false);
   }
+  message(msg) {
+    g.setColor(0, 0, 0).fillRect(0, 32 * 5, 32 * 5, g.getHeight());
+    g.setColor(1, 1, 1)
+      .setFont("6x8:2")
+      .setFontAlign(-1, 1, 0)
+      .drawString(msg, 0, g.getHeight());
+  }
   start() {
     this.map = new Map(30, 30, this.monsters, this.player);
     this.screen = MAIN_SCREEN;
   }
   display() {
+    g.clear();
     if (this.screen == INTRO_SCREEN) {
-      g.clear();
+      g.drawString("welcome", g.getWidth() / 2, g.getHeight() / 2);
+    } else if (this.screen == DIED_SCREEN) {
+      g.drawString("you dead", g.getWidth() / 2, g.getHeight() / 2);
     } else {
       this.map.display();
       this.display_stats();
@@ -508,11 +587,23 @@ class Game {
     let hp_y =
       g.getHeight() -
       Math.round((this.player.hp * g.getHeight()) / this.player.max_hp);
-    let satiation_y = g.getHeight() - Math.round((this.player.satiation *g.getHeight())/1000);
+    let satiation_y =
+      g.getHeight() -
+      Math.round((this.player.satiation * g.getHeight()) / 1000);
     let left_width = g.getWidth() - 5 * 32;
     g.setColor(0, 0, 0).fillRect(5 * 32, 0, g.getWidth(), g.getHeight());
-    g.setColor(1, 0, 0).fillRect(5 * 32, hp_y, 5 * 32 + left_width/2, g.getHeight());
-    g.setColor(0, 0, 1).fillRect(5 * 32 + left_width/2, satiation_y, g.getWidth(), g.getHeight());
+    g.setColor(1, 0, 0).fillRect(
+      5 * 32,
+      hp_y,
+      5 * 32 + left_width / 2,
+      g.getHeight()
+    );
+    g.setColor(0, 0, 1).fillRect(
+      5 * 32 + left_width / 2,
+      satiation_y,
+      g.getWidth(),
+      g.getHeight()
+    );
   }
   attack(position) {
     let monster = this.monsters.find(
@@ -543,9 +634,29 @@ class Game {
       g.setColor(0, 0, 0).fillRect(0, 32 * 5, 32 * 5, g.getHeight());
     } else {
       // move
+      let msg = "";
+      if (destination_content != FLOOR) {
+        // pick item
+        this.map.set_cell(destination, FLOOR);
+        if (destination_content == FOOD) {
+          this.player.satiation = Math.min(this.player.satiation + 600, 1000);
+          msg = "Yum Yum";
+        } else if (destination_content == GOLD) {
+          let amount = randint(1, 10);
+          this.player.gold += amount;
+          msg = "" + amount + " gold";
+        } else if (destination_content == LIFE_POTION) {
+          this.player.hp = Math.min(
+            this.player.max_hp,
+            this.player.hp + randint(1, 8)
+          );
+          msg = "You heal";
+        }
+      }
+
       this.map.move(game.player, destination);
       this.display();
-      g.setColor(0, 0, 0).fillRect(0, 32 * 5, 32 * 5, g.getHeight());
+      game.message(msg);
     }
     this.advance_time();
   }
@@ -553,9 +664,15 @@ class Game {
     this.locked = true;
     while (true) {
       this.time += 1;
+      if (this.time % this.player.regeneration == 0) {
+        this.player.hp = Math.min(this.player.hp + 1, this.player.max_hp);
+      }
       this.monsters.forEach((monster) => {
         if (this.time % monster.speed == 0) {
           monster.move();
+        }
+        if (this.time % monster.regeneration == 0) {
+          monster.hp = Math.min(monster.hp + 1, monster.max_hp);
         }
       });
       if (this.time % this.player.speed == 0) {
@@ -566,18 +683,24 @@ class Game {
   }
 }
 
+g.setBgColor(0, 0, 0);
 let game = new Game();
-
+game.display();
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked) {
     return;
   }
+  if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
+    game.screen = DIED_SCREEN;
+    game.display();
+    return;
+  }
   if (game.screen == INTRO_SCREEN) {
     game.start();
-    g.setBgColor(0, 0, 0);
-    g.clear();
     game.display();
+    return;
+  } else if (game.screen == DIED_SCREEN) {
     return;
   }
   let half_width = g.getWidth() / 2;
