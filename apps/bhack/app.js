@@ -13,19 +13,16 @@ function randint(start, end) {
 }
 
 function go(position, direction) {
-  let destination_x = position[0];
-  let destination_y = position[1];
   if (direction == LEFT) {
-    destination_x -= 1;
+    return {x: position.x - 1, y: position.y};
   } else if (direction == RIGHT) {
-    destination_x += 1;
+    return {x: position.x + 1, y: position.y};
   } else if (direction == UP) {
-    destination_y -= 1;
+    return {x: position.x, y: position.y - 1};
   } else {
     // direction is down
-    destination_y += 1;
+    return {x: position.x, y: position.y + 1};
   }
-  return [destination_x, destination_y];
 }
 
 Bangle.setOptions({
@@ -51,27 +48,6 @@ let h = require("heatshrink");
 //     return coordinates_touch(room1[0], room1[2], room2[0], room2[2]) && coordinates_touch(room1[1], room1[3], room2[1], room2[3]);
 // }
 
-// generate a new room coordinates, not touching any existing ones
-function generate_room(width, height) {
-  // while (true) {
-  let room_width = randint(3, 5);
-  let room_height = randint(3, 5);
-  let sx = randint(2, width - room_width - 2);
-  let sy = randint(2, height - room_height - 2);
-  return [sx, sy, room_width, room_height];
-  // let candidate_room = [sx, sy, room_width, room_height];
-  // let touching = false;
-  // for (let i = 0 ; i < rooms.length ; i++) {
-  //     if (rooms_touch(rooms[i], candidate_room)) {
-  //         touching = true;
-  //         break;
-  //     }
-  // }
-  // if (!touching) {
-  //     return candidate_room;
-  // }
-  // }
-}
 
 const MONSTERS = [undefined, "Player", "Newt", "Ant"];
 const MONSTERS_IMAGES = [
@@ -105,6 +81,12 @@ const FOOD = 101;
 const GOLD = 102;
 const LIFE_POTION = 103;
 const TOMBSTONE = 104;
+const DAGGER = 105;
+const SWORD = 106;
+
+function random_item(dungeon_level) {
+  return [DAGGER, SWORD, FOOD, LIFE_POTION][randint(0, 3)]
+}
 
 const MISC_IMAGES = [
   // exit (img 852)
@@ -137,6 +119,10 @@ const MISC_IMAGES = [
       "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA"
     )
   ),
+  // dagger (img 417)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP0RAIVIB6v/9wQHB6szCBAPUCBQPVCBIPWCAYCBB7QQBqvdCAYPYCAwPZeoQPUogQIAAVEB6GqCAIAKBwIPPgAQBABQOBB54A==")),
+  // sword (img 411)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"))
 ];
 
 let HORIZONTAL_BORDER_IMAGE = h.decompress(
@@ -247,7 +233,7 @@ function random_monster() {
 }
 
 class Creature {
-  constructor(monster_type, x, y) {
+  constructor(monster_type, position) {
     if (monster_type == KNIGHT) {
       this.hp = 10;
       this.ac = 10;
@@ -272,15 +258,14 @@ class Creature {
       console.log("unknown monster");
     }
     this.max_hp = this.hp;
-    this.x = x;
-    this.y = y;
+    this.position = position;
     this.monster_type = monster_type;
     this.regeneration = 100;
   }
   treasure() {
     // let's have a 40% change of dropping something
     if (Math.random() < 0.4) {
-      return [FOOD, GOLD, LIFE_POTION][randint(0, 1, 2)];
+      return [FOOD, GOLD, LIFE_POTION][randint(0, 2)];
     } else {
       return FLOOR;
     }
@@ -289,28 +274,28 @@ class Creature {
     return MONSTERS[this.monster_type];
   }
   move() {
-    let player_x = game.player.x;
-    let player_y = game.player.y;
-    let xdiff = Math.abs(player_x - this.x);
-    let ydiff = Math.abs(player_y - this.y);
+    let player_x = game.player.position.x;
+    let player_y = game.player.position.y;
+    let xdiff = Math.abs(player_x - this.position.x);
+    let ydiff = Math.abs(player_y - this.position.y);
     if ((xdiff == 1 && ydiff == 0) || (xdiff == 0 && ydiff == 1)) {
       // we are just beside player, attack
-      this.attack(game.player, [player_x, player_y]);
+      this.attack(game.player);
     } else {
       if (this.monster_type <= 3) {
         if (xdiff * ydiff < 9) {
-          let destination = [this.x, this.y];
+          let destination = {x: this.position.x, y: this.position.y};
           if (xdiff <= ydiff) {
-            if (player_x > this.x) {
-              destination[0] += 1;
+            if (player_x > this.position.x) {
+              destination.x += 1;
             } else {
-              destination[0] -= 1;
+              destination.x -= 1;
             }
           } else {
-            if (player_y > this.y) {
-              destination[1] += 1;
+            if (player_y > this.position.y) {
+              destination.y += 1;
             } else {
-              destination[1] -= 1;
+              destination.y -= 1;
             }
           }
           if (game.map.get_cell(destination) == FLOOR) {
@@ -322,7 +307,7 @@ class Creature {
       }
     }
   }
-  attack(target, position) {
+  attack(target) {
     let msg;
     if (randint(1, 20) + this.attack_modifier >= target.ac) {
       // attack success
@@ -335,17 +320,19 @@ class Creature {
         // we kill it
         game.monsters = game.monsters.filter((m) => m.hp > 0);
         if (target.monster_type == KNIGHT) {
-          game.map.set_cell(position, TOMBSTONE);
+          game.map.set_cell(target.position, TOMBSTONE);
           msg = "You die";
         } else {
-          game.map.set_cell(position, target.treasure());
+          game.map.set_cell(target.position, target.treasure());
           msg = target.name() + " dies";
         }
         game.display();
       } else {
-        msg = target.name() + " hit(" + damages + ")";
         if (target.monster_type == KNIGHT) {
           game.display_stats();
+          msg = "you are hit(" + damages + ")";
+        } else {
+          msg = target.name() + " hit(" + damages + ")";
         }
       }
     } else {
@@ -360,6 +347,30 @@ class Creature {
   }
 }
 
+class Room {
+  constructor(width, height) {
+    this.width = randint(3, 5);
+    this.height = randint(3, 5);
+    this.x = randint(2, width - this.width - 2);
+    this.y = randint(2, height - this.height - 2);
+  }
+  random_x() {
+    return randint(this.x, this.x+this.width-1);
+  }
+  random_y() {
+    return randint(this.y, this.y+this.height-1);
+  }
+  random_free_position(map) {
+    while (true) {
+      let x = this.random_x();
+      let y = this.random_y();
+      if (map.get_cell({x: x, y: y}) == FLOOR) {
+        return {x: x, y: y};
+      }
+    }
+  }
+}
+
 class Map {
   constructor(width, height, monsters, player) {
     this.width = width;
@@ -371,7 +382,7 @@ class Map {
     let rooms_number = 4;
     let rooms = [];
     for (let r = 0; r < rooms_number; r++) {
-      let room = generate_room(width, height);
+      let room = new Room(width, height);
       this.fill_room(room);
       rooms.push(room);
     }
@@ -380,14 +391,13 @@ class Map {
     this.fill_borders();
 
     let first_room = rooms[0];
-    player.x = randint(first_room[0], first_room[0] + first_room[2] - 1);
-    player.y = randint(first_room[1], first_room[1] + first_room[3] - 1);
-    this.set_cell([player.x, player.y], KNIGHT);
+    player.position = first_room.random_free_position(this);
+    this.set_cell(player.position, KNIGHT);
     let last_room = rooms[rooms.length - 1];
-    let exit_x = randint(last_room[0], last_room[0] + last_room[2] - 1);
-    let exit_y = randint(last_room[1], last_room[1] + last_room[3] - 1);
-    this.set_cell([exit_x, exit_y], EXIT);
-    this.generate_monsters(rooms, monsters, player);
+    this.set_cell(last_room.random_free_position(this), EXIT);
+    this.generate_monsters(rooms, monsters);
+    // now generate some loot
+    this.set_cell(rooms[randint(0, rooms.length-1)].random_free_position(this), random_item());
   }
 
   // return if given position has a tile type which can be walked upon
@@ -446,45 +456,30 @@ class Map {
     let end2 = getTime();
     console.log("it took again", end2 - end);
   }
-  generate_monsters(rooms, monsters, player) {
-    for (let i = 0; i < rooms.length; i++) {
-      let room = rooms[i];
-      let nx;
-      if (i == 0) {
-        nx = randint(room[0], room[0] + room[2] - 2);
-        if (nx >= player.x) {
-          nx += 1;
-        }
-      } else {
-        nx = randint(room[0], room[0] + room[2] - 1);
-      }
-      let ny = randint(room[1], room[1] + room[3] - 1);
+  generate_monsters(rooms, monsters) {
+    let map = this;
+    rooms.forEach((r) => {
+      let monster_position = r.random_free_position(map);
       let monster_type = random_monster();
-      monsters.push(new Creature(monster_type, nx, ny));
-      this.set_cell([nx, ny], monster_type);
-    }
+      monsters.push(new Creature(monster_type, monster_position));
+      this.set_cell(monster_position, monster_type);
+    });
   }
   fill_room(room) {
-    for (let x = room[0]; x < room[0] + room[2]; x++) {
-      for (let y = room[1]; y < room[1] + room[3]; y++) {
-        this.set_cell([x, y], FLOOR);
+    for (let x = room.x; x < room.x + room.width; x++) {
+      for (let y = room.y; y < room.y + room.height; y++) {
+        this.set_cell({x: x, y: y}, FLOOR);
       }
     }
   }
   set_cell(position, content) {
-    let x = position[0];
-    let y = position[1];
-    this.map[y * this.width + x] = content;
+    this.map[position.y * this.width + position.x] = content;
   }
   get_cell(position) {
-    let x = position[0];
-    let y = position[1];
-    return this.map[y * this.width + x];
+    return this.map[position.y * this.width + position.x];
   }
   valid_position(position) {
-    let x = position[0];
-    let y = position[1];
-    return x >= 0 && x < this.width && y >= 0 && y < this.height;
+    return position.x >= 0 && position.x < this.width && position.y >= 0 && position.y < this.height;
   }
   generate_corridors(rooms) {
     for (let i = 0; i < rooms.length - 1; i++) {
@@ -493,32 +488,26 @@ class Map {
   }
   set_hline(xmin, xmax, y, content) {
     for (let x = xmin; x <= xmax; x++) {
-      this.set_cell([x, y], content);
+      this.set_cell({x: x, y: y}, content);
     }
   }
   set_vline(x, ymin, ymax, content) {
     for (let y = ymin; y <= ymax; y++) {
-      this.set_cell([x, y], content);
+      this.set_cell({x: x, y: y}, content);
     }
   }
   join_rooms(r1, r2) {
-    let x1 = r1[0];
-    let y1 = r1[1];
-    let h1 = r1[3];
-    let x2 = r2[0];
-    let y2 = r2[1];
-    let w2 = r2[2];
-    let destination_x = randint(x2, x2 + w2 - 1);
-    let start_y = randint(y1, y1 + h1 - 1);
-    if (x1 < destination_x) {
-      this.set_hline(x1, destination_x, start_y, FLOOR);
+    let destination_x = r2.random_x();
+    let start_y = r1.random_y();
+    if (r1.x < destination_x) {
+      this.set_hline(r1.x, destination_x, start_y, FLOOR);
     } else {
-      this.set_hline(destination_x, x1, start_y, FLOOR);
+      this.set_hline(destination_x, r1.x, start_y, FLOOR);
     }
-    if (start_y < y2) {
-      this.set_vline(destination_x, start_y, y2, FLOOR);
+    if (start_y < r2.y) {
+      this.set_vline(destination_x, start_y, r2.y, FLOOR);
     } else {
-      this.set_vline(destination_x, y2, start_y, FLOOR);
+      this.set_vline(destination_x, r2.y, start_y, FLOOR);
     }
   }
   display() {
@@ -526,7 +515,7 @@ class Map {
     g.fillRect(0, 0, 32 * 5, 32 * 5);
     for (let x = -2; x <= 2; x++) {
       for (let y = -2; y <= 2; y++) {
-        let pos = [game.player.x + x, game.player.y + y];
+        let pos = {x: game.player.position.x + x, y: game.player.position.y + y};
         let content = this.get_cell(pos);
         if (content === undefined || content == 0) {
           continue;
@@ -544,10 +533,9 @@ class Map {
     }
   }
   move(creature, new_position) {
-    this.set_cell([creature.x, creature.y], FLOOR);
+    this.set_cell(creature.position, FLOOR);
     this.set_cell(new_position, creature.monster_type);
-    creature.x = new_position[0];
-    creature.y = new_position[1];
+    creature.position = new_position;
   }
 }
 
@@ -609,10 +597,10 @@ class Game {
     let monster = this.monsters.find(
       (m) => m.x == position[0] && m.y == position[1]
     );
-    this.player.attack(monster, position);
+    this.player.attack(monster);
   }
   player_move(direction) {
-    let destination = go([this.player.x, this.player.y], direction);
+    let destination = go(this.player.position, direction);
     if (!this.map.walkable(destination)) {
       return;
     }
