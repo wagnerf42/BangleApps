@@ -4,6 +4,9 @@ const UP = 1;
 const DOWN = 2;
 const RIGHT = 3;
 
+const MAP_WIDTH = 5 * 32;
+const MAP_HEIGHT = 5 * 32;
+
 const INTRO_SCREEN = 0;
 const MAIN_SCREEN = 1;
 const DIED_SCREEN = 2;
@@ -14,14 +17,14 @@ function randint(start, end) {
 
 function go(position, direction) {
   if (direction == LEFT) {
-    return {x: position.x - 1, y: position.y};
+    return { x: position.x - 1, y: position.y };
   } else if (direction == RIGHT) {
-    return {x: position.x + 1, y: position.y};
+    return { x: position.x + 1, y: position.y };
   } else if (direction == UP) {
-    return {x: position.x, y: position.y - 1};
+    return { x: position.x, y: position.y - 1 };
   } else {
     // direction is down
-    return {x: position.x, y: position.y + 1};
+    return { x: position.x, y: position.y + 1 };
   }
 }
 
@@ -48,8 +51,9 @@ let h = require("heatshrink");
 //     return coordinates_touch(room1[0], room1[2], room2[0], room2[2]) && coordinates_touch(room1[1], room1[3], room2[1], room2[3]);
 // }
 
-
 const MONSTERS = [undefined, "Player", "Newt", "Ant"];
+const MONSTERS_XP = new Uint16Array([0, 0, 200, 100]);
+
 const MONSTERS_IMAGES = [
   undefined,
   // knith (img 340)
@@ -85,7 +89,7 @@ const DAGGER = 105;
 const SWORD = 106;
 
 function random_item(dungeon_level) {
-  return [DAGGER, SWORD, FOOD, LIFE_POTION][randint(0, 3)]
+  return [DAGGER, SWORD, FOOD, LIFE_POTION][randint(0, 3)];
 }
 
 const MISC_IMAGES = [
@@ -120,9 +124,17 @@ const MISC_IMAGES = [
     )
   ),
   // dagger (img 417)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP0RAIVIB6v/9wQHB6szCBAPUCBQPVCBIPWCAYCBB7QQBqvdCAYPYCAwPZeoQPUogQIAAVEB6GqCAIAKBwIPPgAQBABQOBB54A==")),
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP0RAIVIB6v/9wQHB6szCBAPUCBQPVCBIPWCAYCBB7QQBqvdCAYPYCAwPZeoQPUogQIAAVEB6GqCAIAKBwIPPgAQBABQOBB54A=="
+    )
+  ),
   // sword (img 411)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"))
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"
+    )
+  ),
 ];
 
 let HORIZONTAL_BORDER_IMAGE = h.decompress(
@@ -239,9 +251,10 @@ class Creature {
       this.ac = 10;
       this.attack_modifier = 4;
       this.speed = 6;
-      this.damages = [1, 6, 0];
+      this.damages = [1, 4, 0];
       this.satiation = 1000;
       this.gold = 0;
+      this.level = 1;
     } else if (monster_type == NEWT) {
       this.hp = 4;
       this.ac = 10;
@@ -253,14 +266,42 @@ class Creature {
       this.ac = 10;
       this.attack_modifier = 8;
       this.speed = 10;
-      this.damages = [1, 3, 0];
+      this.damages = [1, 2, 0];
     } else {
       console.log("unknown monster");
     }
+    this.xp = MONSTERS_XP[monster_type];
     this.max_hp = this.hp;
     this.position = position;
     this.monster_type = monster_type;
     this.regeneration = 100;
+  }
+  add_xp(xp) {
+    let next_level_threshold = 1 << (9 + this.level);
+    this.xp += xp;
+    if (this.xp >= next_level_threshold) {
+      // we level up
+      this.level += 1;
+      game.level_up();
+    }
+  }
+  item_effect(item, picking) {
+    // apply / remove effect of item on stats
+    if (item == DAGGER) {
+      if (picking) {
+        this.attack_modifier += 2;
+      } else {
+        this.attack_modifier -= 2;
+      }
+    } else if (item == SWORD) {
+      if (picking) {
+        this.damages = [1, 6, 0];
+      } else {
+        this.damages = [1, 4, 0];
+      }
+    } else {
+      console.log("unknown item taking effect", item);
+    }
   }
   treasure() {
     // let's have a 40% change of dropping something
@@ -284,7 +325,7 @@ class Creature {
     } else {
       if (this.monster_type <= 3) {
         if (xdiff * ydiff < 9) {
-          let destination = {x: this.position.x, y: this.position.y};
+          let destination = { x: this.position.x, y: this.position.y };
           if (xdiff <= ydiff) {
             if (player_x > this.position.x) {
               destination.x += 1;
@@ -325,6 +366,7 @@ class Creature {
         } else {
           game.map.set_cell(target.position, target.treasure());
           msg = target.name() + " dies";
+          this.add_xp(target.xp_value);
         }
         game.display();
       } else {
@@ -355,17 +397,17 @@ class Room {
     this.y = randint(2, height - this.height - 2);
   }
   random_x() {
-    return randint(this.x, this.x+this.width-1);
+    return randint(this.x, this.x + this.width - 1);
   }
   random_y() {
-    return randint(this.y, this.y+this.height-1);
+    return randint(this.y, this.y + this.height - 1);
   }
   random_free_position(map) {
     while (true) {
       let x = this.random_x();
       let y = this.random_y();
-      if (map.get_cell({x: x, y: y}) == FLOOR) {
-        return {x: x, y: y};
+      if (map.get_cell({ x: x, y: y }) == FLOOR) {
+        return { x: x, y: y };
       }
     }
   }
@@ -397,7 +439,10 @@ class Map {
     this.set_cell(last_room.random_free_position(this), EXIT);
     this.generate_monsters(rooms, monsters);
     // now generate some loot
-    this.set_cell(rooms[randint(0, rooms.length-1)].random_free_position(this), random_item());
+    this.set_cell(
+      rooms[randint(0, rooms.length - 1)].random_free_position(this),
+      random_item()
+    );
   }
 
   // return if given position has a tile type which can be walked upon
@@ -468,7 +513,7 @@ class Map {
   fill_room(room) {
     for (let x = room.x; x < room.x + room.width; x++) {
       for (let y = room.y; y < room.y + room.height; y++) {
-        this.set_cell({x: x, y: y}, FLOOR);
+        this.set_cell({ x: x, y: y }, FLOOR);
       }
     }
   }
@@ -479,7 +524,12 @@ class Map {
     return this.map[position.y * this.width + position.x];
   }
   valid_position(position) {
-    return position.x >= 0 && position.x < this.width && position.y >= 0 && position.y < this.height;
+    return (
+      position.x >= 0 &&
+      position.x < this.width &&
+      position.y >= 0 &&
+      position.y < this.height
+    );
   }
   generate_corridors(rooms) {
     for (let i = 0; i < rooms.length - 1; i++) {
@@ -488,12 +538,12 @@ class Map {
   }
   set_hline(xmin, xmax, y, content) {
     for (let x = xmin; x <= xmax; x++) {
-      this.set_cell({x: x, y: y}, content);
+      this.set_cell({ x: x, y: y }, content);
     }
   }
   set_vline(x, ymin, ymax, content) {
     for (let y = ymin; y <= ymax; y++) {
-      this.set_cell({x: x, y: y}, content);
+      this.set_cell({ x: x, y: y }, content);
     }
   }
   join_rooms(r1, r2) {
@@ -512,10 +562,13 @@ class Map {
   }
   display() {
     g.setColor(0.2, 0.2, 0.2);
-    g.fillRect(0, 0, 32 * 5, 32 * 5);
+    g.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     for (let x = -2; x <= 2; x++) {
       for (let y = -2; y <= 2; y++) {
-        let pos = {x: game.player.position.x + x, y: game.player.position.y + y};
+        let pos = {
+          x: game.player.position.x + x,
+          y: game.player.position.y + y,
+        };
         let content = this.get_cell(pos);
         if (content === undefined || content == 0) {
           continue;
@@ -544,15 +597,39 @@ class Game {
     this.locked = false;
     this.monsters = [];
     this.player = new Creature(KNIGHT);
+    this.weapon = null;
+    this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.time = 0;
     this.dungeon_level = 1;
+    this.in_menu = false;
     Bangle.setLocked(false);
   }
+  level_up() {
+    let hp_increment = randint(1, 10);
+    this.player.max_hp += hp_increment;
+    this.player.hp += hp_increment;
+    this.player.attack_modifier += 1;
+    this.in_menu = true;
+    setTimeout(() => {
+      E.showPrompt(
+        "hp is now " +
+          this.player.max_hp +
+          "\nattack is now" +
+          this.player.attack_modifier,
+        { title: "Level Up!", buttons: { One: 1, Two: 2 } }
+      ).then(function (c) {
+        console.log("you chose " + c);
+        this.in_menu = false;
+        game.display();
+      });
+    }, 1000);
+    console.log("TODO: level up");
+  }
   message(msg) {
-    g.setColor(0, 0, 0).fillRect(0, 32 * 5, 32 * 5, g.getHeight());
+    g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
     g.setColor(1, 1, 1)
-      .setFont("6x8:2")
+      .setFont("4x6:2")
       .setFontAlign(-1, 1, 0)
       .drawString(msg, 0, g.getHeight());
   }
@@ -578,16 +655,16 @@ class Game {
     let satiation_y =
       g.getHeight() -
       Math.round((this.player.satiation * g.getHeight()) / 1000);
-    let left_width = g.getWidth() - 5 * 32;
-    g.setColor(0, 0, 0).fillRect(5 * 32, 0, g.getWidth(), g.getHeight());
+    let left_width = g.getWidth() - MAP_WIDTH;
+    g.setColor(0, 0, 0).fillRect(MAP_WIDTH, 0, g.getWidth(), g.getHeight());
     g.setColor(1, 0, 0).fillRect(
-      5 * 32,
+      MAP_WIDTH,
       hp_y,
-      5 * 32 + left_width / 2,
+      MAP_WIDTH + left_width / 2,
       g.getHeight()
     );
     g.setColor(0, 0, 1).fillRect(
-      5 * 32 + left_width / 2,
+      MAP_WIDTH + left_width / 2,
       satiation_y,
       g.getWidth(),
       g.getHeight()
@@ -616,16 +693,20 @@ class Game {
     } else if (destination_content == 100) {
       // we go down to next level
       this.dungeon_level += 1;
+      E.showMessage("down we go to level " + this.dungeon_level + " ...");
       this.monsters = [];
       this.start();
       this.display();
-      g.setColor(0, 0, 0).fillRect(0, 32 * 5, 32 * 5, g.getHeight());
+      g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
     } else {
       // move
       let msg = "";
+      if (this.dropping !== null) {
+        this.map.set_cell(this.player.position, this.dropping);
+        this.dropping = null;
+      }
       if (destination_content != FLOOR) {
         // pick item
-        this.map.set_cell(destination, FLOOR);
         if (destination_content == FOOD) {
           this.player.satiation = Math.min(this.player.satiation + 600, 1000);
           msg = "Yum Yum";
@@ -639,14 +720,31 @@ class Game {
             this.player.hp + randint(1, 8)
           );
           msg = "You heal";
+        } else if (
+          destination_content == DAGGER ||
+          destination_content == SWORD
+        ) {
+          if (destination_content == DAGGER) {
+            msg = "Dagger picked";
+          } else {
+            msg = "Sword picked";
+          }
+          this.dropping = this.weapon;
+          if (this.dropping !== null) {
+            this.player.item_effect(this.dropping, false);
+          }
+          this.player.item_effect(destination_content, true);
+          this.weapon = destination_content;
         }
       }
 
       this.map.move(game.player, destination);
       this.display();
-      game.message(msg);
+      this.message(msg);
     }
-    this.advance_time();
+    if (!this.in_menu) {
+      this.advance_time();
+    }
   }
   advance_time() {
     this.locked = true;
@@ -676,7 +774,7 @@ let game = new Game();
 game.display();
 
 Bangle.on("touch", function (button, xy) {
-  if (game.locked) {
+  if (game.locked || game.in_menu) {
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
@@ -698,6 +796,16 @@ Bangle.on("touch", function (button, xy) {
   directions_amplitudes[RIGHT] = xy.x - half_width;
   directions_amplitudes[UP] = half_height - xy.y;
   directions_amplitudes[DOWN] = xy.y - half_height;
+
+  if (
+    Math.abs(directions_amplitudes[LEFT]) < g.getWidth() / 6 &&
+    Math.abs(directions_amplitudes[DOWN]) < g.getHeight() / 6
+  ) {
+    // center is touched, just pass time
+    game.message("you rest" + ".".repeat((game.time / game.player.speed) % 3));
+    game.advance_time();
+    return;
+  }
 
   let max_direction;
   let second_max_direction;
