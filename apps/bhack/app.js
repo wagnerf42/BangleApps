@@ -4,7 +4,7 @@ const UP = 1;
 const DOWN = 2;
 const RIGHT = 3;
 
-const MAP_WIDTH = 5 * 32;
+const MAP_WIDTH = 5 * 32; // for the banglejs2
 const MAP_HEIGHT = 5 * 32;
 
 const INTRO_SCREEN = 0;
@@ -56,7 +56,7 @@ const MONSTERS_XP = new Uint16Array([0, 0, 200, 100]);
 
 const MONSTERS_IMAGES = [
   undefined,
-  // knith (img 340)
+  // knight (img 340)
   h.decompress(
     atob(
       "kEggmqiIACgFEAAIEBBIeqB58RokzmYOBmf/AoIQBAYIVBB6AOCBAIOCGIIPCCgIPRAwJJEHAIPX/4wCAoPdJ4YPX93uGoQACB63dFIXdKoQPVFIVVAAK0BCAIPVAALPDogCBJ4wPPJIILCB4IBBB6xKBegVEJgPdBAIPTSAQGCdwVVN4oPRAAcRNwgPSE4JHBFATtEKoQPP1QLBAAbMCqqXCBwIPPgAQBAAhUFBwIPP"
@@ -87,9 +87,10 @@ const LIFE_POTION = 103;
 const TOMBSTONE = 104;
 const DAGGER = 105;
 const SWORD = 106;
+const LEATHER_HELMET = 107;
 
 function random_item(dungeon_level) {
-  return [DAGGER, SWORD, FOOD, LIFE_POTION][randint(0, 3)];
+  return [DAGGER, SWORD, LEATHER_HELMET, FOOD, LIFE_POTION][randint(0, 4)];
 }
 
 const MISC_IMAGES = [
@@ -135,6 +136,8 @@ const MISC_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"
     )
   ),
+  // leather helmet (img 465)
+  h.decompress(atob("kEggkRAD8imYAKkQPRAYIALB6pIEgAPYiNEokzAQIQEB6cABwgPBCAYPZBINEB65PCJoQWBB65wDAgMAmYPaNYQvMB5oGBAYQPbAAQOEB6gQFR4IFDB6IsEABAPRCBgOCB6AAdA=")),
 ];
 
 let HORIZONTAL_BORDER_IMAGE = h.decompress(
@@ -299,6 +302,13 @@ class Creature {
       } else {
         this.damages = [1, 4, 0];
       }
+    } else if (item == LEATHER_HELMET) {
+      //TODO: factorize code
+      if (picking) {
+        this.ac += 1;
+      } else {
+        this.ac -= 1;
+      }
     } else {
       console.log("unknown item taking effect", item);
     }
@@ -321,23 +331,29 @@ class Creature {
     let ydiff = Math.abs(player_y - this.position.y);
     if ((xdiff == 1 && ydiff == 0) || (xdiff == 0 && ydiff == 1)) {
       // we are just beside player, attack
-      this.attack(game.player);
+      return this.attack(game.player);
     } else {
       if (this.monster_type <= 3) {
         if (xdiff * ydiff < 9) {
-          let destination = { x: this.position.x, y: this.position.y };
-          if (xdiff <= ydiff) {
+          if (xdiff != 0) {
+            let destination = {x: this.position.x, y: this.position.y};
             if (player_x > this.position.x) {
               destination.x += 1;
             } else {
               destination.x -= 1;
             }
-          } else {
-            if (player_y > this.position.y) {
-              destination.y += 1;
-            } else {
-              destination.y -= 1;
+            if (game.map.get_cell(destination) == FLOOR) {
+              game.map.move(this, destination);
             }
+          }
+          if (ydiff == 0) {
+            return;
+          }
+          let destination = {x: this.position.x, y: this.position.y};
+          if (player_y > this.position.y) {
+            destination.y += 1;
+          } else {
+            destination.y -= 1;
           }
           if (game.map.get_cell(destination) == FLOOR) {
             game.map.move(this, destination);
@@ -346,10 +362,10 @@ class Creature {
       } else {
         console.log("TODO: move towards player");
       }
+      return;
     }
   }
   attack(target) {
-    let msg;
     if (randint(1, 20) + this.attack_modifier >= target.ac) {
       // attack success
       let damages = this.damages[2];
@@ -362,30 +378,27 @@ class Creature {
         game.monsters = game.monsters.filter((m) => m.hp > 0);
         if (target.monster_type == KNIGHT) {
           game.map.set_cell(target.position, TOMBSTONE);
-          msg = "You die";
+          game.msg("You die");
         } else {
           game.map.set_cell(target.position, target.treasure());
-          msg = target.name() + " dies";
-          this.add_xp(target.xp_value);
+          game.msg(target.name() + " dies");
+          this.add_xp(target.xp);
         }
-        game.display();
       } else {
         if (target.monster_type == KNIGHT) {
-          game.display_stats();
-          msg = "you are hit(" + damages + ")";
+          game.msg("you are hit(" + damages + ")");
         } else {
-          msg = target.name() + " hit(" + damages + ")";
+          game.msg(target.name() + " hit(" + damages + ")");
         }
       }
     } else {
       // attack miss
       if (target.monster_type != KNIGHT) {
-        msg = "you miss";
+        game.msg("you miss");
       } else {
-        msg = target.name() + " missed";
+        game.msg(target.name() + " missed");
       }
     }
-    game.message(msg);
   }
 }
 
@@ -411,16 +424,22 @@ class Room {
       }
     }
   }
+  random_inner_position(map) {
+    let x = randint(this.x+1, this.x + this.width - 2);
+    let y = randint(this.y+1, this.y + this.height - 2);
+    if (map.get_cell({ x: x, y: y }) == FLOOR) {
+      return { x: x, y: y };
+    }
+  }
 }
 
 class Map {
-  constructor(width, height, monsters, player) {
+  constructor(width, height, monsters, player, dungeon_level) {
     this.width = width;
     this.height = height;
     this.seed = E.hwRand();
     E.srand(this.seed);
     this.map = new Uint16Array(width * height);
-    console.log("creating rooms");
     let rooms_number = 4;
     let rooms = [];
     for (let r = 0; r < rooms_number; r++) {
@@ -428,23 +447,32 @@ class Map {
       this.fill_room(room);
       rooms.push(room);
     }
-    console.log("creating corridors");
     this.generate_corridors(rooms);
     this.fill_borders();
+
+    // first, place the exit somewhere not near a wall.
+    // we place it first to be 100% sure it is a free space.
+    let last_room = rooms[rooms.length - 1];
+    this.set_cell(last_room.random_inner_position(this), EXIT);
 
     let first_room = rooms[0];
     player.position = first_room.random_free_position(this);
     this.set_cell(player.position, KNIGHT);
-    let last_room = rooms[rooms.length - 1];
-    this.set_cell(last_room.random_free_position(this), EXIT);
     this.generate_monsters(rooms, monsters);
+
     // now generate some loot
     this.set_cell(
       rooms[randint(0, rooms.length - 1)].random_free_position(this),
       random_item()
     );
+    
+    this.rooms = rooms;
+    this.generate_special_room();
   }
-
+  generate_special_room() {
+    console.log("TODO: special room");
+    
+  }
   // return if given position has a tile type which can be walked upon
   walkable(position) {
     if (!this.valid_position(position)) {
@@ -456,8 +484,6 @@ class Map {
   fill_borders() {
     let map = this.map;
     let w = this.width;
-    console.log("start", this.width, this.height);
-    let start = getTime();
     let neighbours = Int8Array([-w - 1, -w, -w + 1, -1, 1, w - 1, w, w + 1]);
     // first, figure out which tiles are on the border
     for (let y = 1; y < this.height - 1; y++) {
@@ -473,8 +499,6 @@ class Map {
         }
       }
     }
-    let end = getTime();
-    console.log("it took", end - start);
     // now, figure the shapes to use for border tiles
     for (let y = 1; y < this.height - 1; y++) {
       for (let x = 1; x < this.width - 1; x++) {
@@ -498,17 +522,19 @@ class Map {
         map[p] = 200 + border_type;
       }
     }
-    let end2 = getTime();
-    console.log("it took again", end2 - end);
   }
   generate_monsters(rooms, monsters) {
     let map = this;
     rooms.forEach((r) => {
-      let monster_position = r.random_free_position(map);
-      let monster_type = random_monster();
-      monsters.push(new Creature(monster_type, monster_position));
-      this.set_cell(monster_position, monster_type);
+      map.generate_monster(r, monsters);
     });
+  }
+  generate_monster(room, monsters) {
+    //TODO: we need a way to fail
+    let monster_position = room.random_free_position(this);
+    let monster_type = random_monster();
+    monsters.push(new Creature(monster_type, monster_position));
+    this.set_cell(monster_position, monster_type);
   }
   fill_room(room) {
     for (let x = room.x; x < room.x + room.width; x++) {
@@ -594,47 +620,64 @@ class Map {
 
 class Game {
   constructor() {
-    this.locked = false;
     this.monsters = [];
     this.player = new Creature(KNIGHT);
     this.weapon = null;
+    this.helmet = null;
     this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.time = 0;
     this.dungeon_level = 1;
+    this.display();
     this.in_menu = false;
+    this.locked = false;
+    this.message = null;
     Bangle.setLocked(false);
   }
   level_up() {
     let hp_increment = randint(1, 10);
+    let old_max_hp = this.player.max_hp;
+    let old_attack = this.player.attack_modifier;
     this.player.max_hp += hp_increment;
     this.player.hp += hp_increment;
     this.player.attack_modifier += 1;
     this.in_menu = true;
-    setTimeout(() => {
-      E.showPrompt(
-        "hp is now " +
-          this.player.max_hp +
-          "\nattack is now" +
+    setTimeout(() =>{
+    E.showPrompt(
+        "stats changes:\nhp: " +
+          old_max_hp + " -> " + this.player.max_hp +
+          "\nattack: " +
+          old_attack + " -> " + 
           this.player.attack_modifier,
         { title: "Level Up!", buttons: { One: 1, Two: 2 } }
       ).then(function (c) {
-        console.log("you chose " + c);
-        this.in_menu = false;
+        game.in_menu = false;
+        game.advance_time();
         game.display();
-      });
-    }, 1000);
-    console.log("TODO: level up");
+        game.show_msg();
+    });}, 1000);
   }
-  message(msg) {
+  msg(message) {
+    // record message to be shown later.
+    if (this.message === null) {
+      this.message = message;
+    } else {
+      this.message += ". " + message;
+    }
+  }
+  show_msg() {
     g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
+    if (this.message === null) {
+      return;
+    }
     g.setColor(1, 1, 1)
       .setFont("4x6:2")
       .setFontAlign(-1, 1, 0)
-      .drawString(msg, 0, g.getHeight());
+      .drawString(this.message, 0, g.getHeight());
+    this.message = null;
   }
   start() {
-    this.map = new Map(30, 30, this.monsters, this.player);
+    this.map = new Map(30, 30, this.monsters, this.player, this.dungeon_level);
     this.screen = MAIN_SCREEN;
   }
   display() {
@@ -642,6 +685,10 @@ class Game {
     if (this.screen == INTRO_SCREEN) {
       g.drawString("welcome", g.getWidth() / 2, g.getHeight() / 2);
     } else if (this.screen == DIED_SCREEN) {
+      game.in_menu = true;
+      E.showAlert("you died").then(() => {
+        game = new Game();
+      });
       g.drawString("you dead", g.getWidth() / 2, g.getHeight() / 2);
     } else {
       this.map.display();
@@ -672,9 +719,9 @@ class Game {
   }
   attack(position) {
     let monster = this.monsters.find(
-      (m) => m.x == position[0] && m.y == position[1]
+      (m) => m.position.x == position.x && m.position.y == position.y
     );
-    this.player.attack(monster);
+    return this.player.attack(monster);
   }
   player_move(direction) {
     let destination = go(this.player.position, direction);
@@ -696,11 +743,8 @@ class Game {
       E.showMessage("down we go to level " + this.dungeon_level + " ...");
       this.monsters = [];
       this.start();
-      this.display();
-      g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
     } else {
       // move
-      let msg = "";
       if (this.dropping !== null) {
         this.map.set_cell(this.player.position, this.dropping);
         this.dropping = null;
@@ -709,25 +753,25 @@ class Game {
         // pick item
         if (destination_content == FOOD) {
           this.player.satiation = Math.min(this.player.satiation + 600, 1000);
-          msg = "Yum Yum";
+          this.msg("Yum Yum");
         } else if (destination_content == GOLD) {
           let amount = randint(1, 10);
           this.player.gold += amount;
-          msg = "" + amount + " gold";
+          this.msg("" + amount + " gold");
         } else if (destination_content == LIFE_POTION) {
           this.player.hp = Math.min(
             this.player.max_hp,
             this.player.hp + randint(1, 8)
           );
-          msg = "You heal";
+          this.msg("You heal");
         } else if (
           destination_content == DAGGER ||
-          destination_content == SWORD
+          destination_content == SWORD 
         ) {
           if (destination_content == DAGGER) {
-            msg = "Dagger picked";
+            this.msg("Dagger picked");
           } else {
-            msg = "Sword picked";
+            this.msg("Sword picked");
           }
           this.dropping = this.weapon;
           if (this.dropping !== null) {
@@ -735,16 +779,25 @@ class Game {
           }
           this.player.item_effect(destination_content, true);
           this.weapon = destination_content;
+        } else if (destination_content == LEATHER_HELMET) {
+          // TODO: factorize code for all item types
+          this.msg("Leather helmet picked");
+          this.dropping = this.helmet;
+          if (this.dropping !== null) {
+            this.player.item_effect(this.dropping, false);
+          }
+          this.player.item_effect(destination_content, true);
+          this.helmet = destination_content;
         }
       }
 
       this.map.move(game.player, destination);
-      this.display();
-      this.message(msg);
     }
     if (!this.in_menu) {
       this.advance_time();
     }
+    this.display();
+    this.show_msg();
   }
   advance_time() {
     this.locked = true;
@@ -761,6 +814,9 @@ class Game {
           monster.hp = Math.min(monster.hp + 1, monster.max_hp);
         }
       });
+      if (this.time % 300 == 0) {
+        this.map.generate_monster(this.map.rooms[randint(0, this.map.rooms.length-1)], this.monsters);
+      }
       if (this.time % this.player.speed == 0) {
         this.locked = false;
         return;
@@ -771,7 +827,6 @@ class Game {
 
 g.setBgColor(0, 0, 0);
 let game = new Game();
-game.display();
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu) {
@@ -802,8 +857,10 @@ Bangle.on("touch", function (button, xy) {
     Math.abs(directions_amplitudes[DOWN]) < g.getHeight() / 6
   ) {
     // center is touched, just pass time
-    game.message("you rest" + ".".repeat((game.time / game.player.speed) % 3));
+    game.msg("you rest" + ".".repeat((game.time / game.player.speed) % 3));
     game.advance_time();
+    game.display();
+    game.show_msg();
     return;
   }
 
