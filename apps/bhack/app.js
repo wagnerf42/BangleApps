@@ -137,7 +137,11 @@ const MISC_IMAGES = [
     )
   ),
   // leather helmet (img 465)
-  h.decompress(atob("kEggkRAD8imYAKkQPRAYIALB6pIEgAPYiNEokzAQIQEB6cABwgPBCAYPZBINEB65PCJoQWBB65wDAgMAmYPaNYQvMB5oGBAYQPbAAQOEB6gQFR4IFDB6IsEABAPRCBgOCB6AAdA=")),
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPVNooPYgFV7sz7tViIQDB6YOFB4IQDB64ODqoPXCARNCAoIPXAIIPBAgQBCB66MDCgIPYKQR2DB7LUEZ5APOCAoyDB6dEFogAGogPQ1QQBABQOBB58ACAIAKBwIPPA="
+    )
+  ),
 ];
 
 let HORIZONTAL_BORDER_IMAGE = h.decompress(
@@ -336,7 +340,7 @@ class Creature {
       if (this.monster_type <= 3) {
         if (xdiff * ydiff < 9) {
           if (xdiff != 0) {
-            let destination = {x: this.position.x, y: this.position.y};
+            let destination = { x: this.position.x, y: this.position.y };
             if (player_x > this.position.x) {
               destination.x += 1;
             } else {
@@ -349,7 +353,7 @@ class Creature {
           if (ydiff == 0) {
             return;
           }
-          let destination = {x: this.position.x, y: this.position.y};
+          let destination = { x: this.position.x, y: this.position.y };
           if (player_y > this.position.y) {
             destination.y += 1;
           } else {
@@ -409,6 +413,20 @@ class Room {
     this.x = randint(2, width - this.width - 2);
     this.y = randint(2, height - this.height - 2);
   }
+  on_border(op) {
+    for (let x = this.x - 1; x < this.x + this.width + 1; x++) {
+      let pos = { x: x, y: this.y - 1 };
+      op(pos);
+      pos = { x: x, y: this.y + this.height };
+      op(pos);
+    }
+    for (let y = this.y; y < this.y + this.height; y++) {
+      let pos = { x: this.x - 1, y: y };
+      op(pos);
+      pos = { x: this.x + this.width, y: y };
+      op(pos);
+    }
+  }
   random_x() {
     return randint(this.x, this.x + this.width - 1);
   }
@@ -425,8 +443,8 @@ class Room {
     }
   }
   random_inner_position(map) {
-    let x = randint(this.x+1, this.x + this.width - 2);
-    let y = randint(this.y+1, this.y + this.height - 2);
+    let x = randint(this.x + 1, this.x + this.width - 2);
+    let y = randint(this.y + 1, this.y + this.height - 2);
     if (map.get_cell({ x: x, y: y }) == FLOOR) {
       return { x: x, y: y };
     }
@@ -465,13 +483,81 @@ class Map {
       rooms[randint(0, rooms.length - 1)].random_free_position(this),
       random_item()
     );
-    
+
     this.rooms = rooms;
-    this.generate_special_room();
+    this.hidden_room = this.find_hidden_room();
+    this.secret = null;
+    if (this.hidden_room !== null) {
+      this.secret = this.find_secret(this.hidden_room);
+    }
   }
-  generate_special_room() {
-    console.log("TODO: special room");
-    
+  find_secret(room) {
+    // find where to place a secret door around hidden room
+    let candidates = [];
+    for (let x = room.x; x < room.x + room.width; x++) {
+      let pos = { x: x, y: room.y - 1 };
+      let next_pos = { x: pos.x, y: pos.y - 1 };
+      let c = this.get_cell(pos);
+      if (c >= 200 && c < 300 && this.get_cell(next_pos) == FLOOR) {
+        candidates.push([pos, next_pos]);
+      }
+      pos = { x: x, y: room.y + room.height };
+      next_pos = { x: pos.x, y: pos.y + 1 };
+      c = this.get_cell(pos);
+      if (c >= 200 && c < 300 && this.get_cell(next_pos) == FLOOR) {
+        candidates.push([pos, next_pos]);
+      }
+    }
+    for (let y = room.y + 1; y < room.y + room.height - 1; y++) {
+      let pos = { x: room.x - 1, y: y };
+      let next_pos = { x: pos.x - 1, y: pos.y };
+      let c = this.get_cell(pos);
+      if (c >= 200 && c < 300 && this.get_cell(next_pos) == FLOOR) {
+        candidates.push([pos, next_pos]);
+      }
+      pos = { x: room.x + room.width, y: y };
+      next_pos = { x: pos.x + 1, y: pos.y };
+      c = this.get_cell(pos);
+      if (c >= 200 && c < 300 && this.get_cell(next_pos) == FLOOR) {
+        candidates.push([pos, next_pos]);
+      }
+    }
+    return candidates[randint(0, candidates.length - 1)];
+  }
+  find_hidden_room() {
+    //TODO: avoid having the highest leftmost one
+    let target_width = 4;
+    let target_height = 3;
+    let map = this.map;
+    // let's count the number of empty spaces above each x
+    let counts = new Uint8Array(this.width);
+    let p = this.width;
+    for (let y = 1; y < this.height - 1; y++) {
+      let good_heights = 0; // how many good heights to the left of above us
+      for (let x = 1; x < this.width - 1; x++) {
+        if (counts[x] >= target_height + 1) {
+          good_heights += 1;
+        } else {
+          good_heights = 0;
+        }
+        if (map[p] == 0 || (map[p] >= 200 && map[p] <= 300)) {
+          counts[x] += 1;
+        } else {
+          counts[x] = 0;
+          if (map[p] == FLOOR && good_heights >= target_width) {
+            let r = new Room();
+            r.x = x - target_width + 1;
+            r.y = y - target_height - 1;
+            r.width = target_width;
+            r.height = target_height;
+            return r;
+          }
+        }
+        p += 1;
+      }
+      p += 2;
+    }
+    return null;
   }
   // return if given position has a tile type which can be walked upon
   walkable(position) {
@@ -480,6 +566,33 @@ class Map {
     }
     let tile = this.get_cell(position);
     return tile != 0 && (tile < 200 || tile > 300);
+  }
+  compute_border_shapes(start_x, end_x, start_y, end_y) {
+    let map = this.map;
+    let w = this.width;
+    // now, figure the shapes to use for border tiles
+    for (let y = start_y; y < end_y; y++) {
+      for (let x = start_x; x < end_x; x++) {
+        let p = y * w + x;
+        if (map[p] < 200 || map[p] >= 300) {
+          continue;
+        }
+        let border_type = 0;
+        if (map[p - w] >= 200 && map[p - w] < 300) {
+          border_type += 1;
+        }
+        if (map[p - 1] >= 200 && map[p - 1] < 300) {
+          border_type += 2;
+        }
+        if (map[p + 1] >= 200 && map[p + 1] < 300) {
+          border_type += 4;
+        }
+        if (map[p + w] >= 200 && map[p + w] < 300) {
+          border_type += 8;
+        }
+        map[p] = 200 + border_type;
+      }
+    }
   }
   fill_borders() {
     let map = this.map;
@@ -499,29 +612,7 @@ class Map {
         }
       }
     }
-    // now, figure the shapes to use for border tiles
-    for (let y = 1; y < this.height - 1; y++) {
-      for (let x = 1; x < this.width - 1; x++) {
-        let p = y * w + x;
-        if (map[p] != 200) {
-          continue;
-        }
-        let border_type = 0;
-        if (map[p - w] >= 200 && map[p - w] <= 300) {
-          border_type += 1;
-        }
-        if (map[p - 1] >= 200 && map[p - 1] <= 300) {
-          border_type += 2;
-        }
-        if (map[p + 1] == 200) {
-          border_type += 4;
-        }
-        if (map[p + w] == 200) {
-          border_type += 8;
-        }
-        map[p] = 200 + border_type;
-      }
-    }
+    this.compute_border_shapes(1, this.width - 1, 1, this.height - 1);
   }
   generate_monsters(rooms, monsters) {
     let map = this;
@@ -634,6 +725,34 @@ class Game {
     this.message = null;
     Bangle.setLocked(false);
   }
+  rest() {
+    this.msg("you rest" + ".".repeat((game.time / game.player.speed) % 3));
+    if (this.map.secret !== null) {
+      let secret_pos = this.map.secret[1];
+      if (
+        this.player.position.x == secret_pos.x &&
+        this.player.position.y == secret_pos.y
+      ) {
+        let r = this.map.hidden_room;
+        this.map.fill_room(r);
+        r.on_border((pos) => {
+          this.map.set_cell(pos, 200);
+        });
+        this.map.set_cell(this.map.secret[0], FLOOR);
+        this.map.compute_border_shapes(
+          Math.max(0, r.x - 2),
+          Math.min(this.map.width, r.x + r.width + 2),
+          Math.max(0, r.y - 2),
+          Math.min(this.map.height, r.y + r.height + 2)
+        );
+        this.msg("Secret found");
+        this.map.secret = null;
+      }
+    }
+    this.advance_time();
+    this.display();
+    this.show_msg();
+  }
   level_up() {
     let hp_increment = randint(1, 10);
     let old_max_hp = this.player.max_hp;
@@ -642,12 +761,15 @@ class Game {
     this.player.hp += hp_increment;
     this.player.attack_modifier += 1;
     this.in_menu = true;
-    setTimeout(() =>{
-    E.showPrompt(
+    setTimeout(() => {
+      E.showPrompt(
         "stats changes:\nhp: " +
-          old_max_hp + " -> " + this.player.max_hp +
+          old_max_hp +
+          " -> " +
+          this.player.max_hp +
           "\nattack: " +
-          old_attack + " -> " + 
+          old_attack +
+          " -> " +
           this.player.attack_modifier,
         { title: "Level Up!", buttons: { One: 1, Two: 2 } }
       ).then(function (c) {
@@ -655,7 +777,8 @@ class Game {
         game.advance_time();
         game.display();
         game.show_msg();
-    });}, 1000);
+      });
+    }, 1000);
   }
   msg(message) {
     // record message to be shown later.
@@ -766,7 +889,7 @@ class Game {
           this.msg("You heal");
         } else if (
           destination_content == DAGGER ||
-          destination_content == SWORD 
+          destination_content == SWORD
         ) {
           if (destination_content == DAGGER) {
             this.msg("Dagger picked");
@@ -815,7 +938,10 @@ class Game {
         }
       });
       if (this.time % 300 == 0) {
-        this.map.generate_monster(this.map.rooms[randint(0, this.map.rooms.length-1)], this.monsters);
+        this.map.generate_monster(
+          this.map.rooms[randint(0, this.map.rooms.length - 1)],
+          this.monsters
+        );
       }
       if (this.time % this.player.speed == 0) {
         this.locked = false;
@@ -857,10 +983,7 @@ Bangle.on("touch", function (button, xy) {
     Math.abs(directions_amplitudes[DOWN]) < g.getHeight() / 6
   ) {
     // center is touched, just pass time
-    game.msg("you rest" + ".".repeat((game.time / game.player.speed) % 3));
-    game.advance_time();
-    game.display();
-    game.show_msg();
+    game.rest();
     return;
   }
 
