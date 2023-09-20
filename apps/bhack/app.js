@@ -51,7 +51,6 @@ let h = require("heatshrink");
 //     return coordinates_touch(room1[0], room1[2], room2[0], room2[2]) && coordinates_touch(room1[1], room1[3], room2[1], room2[3]);
 // }
 
-
 const MONSTERS_IMAGES = [
   undefined,
   // knight (img 340)
@@ -73,32 +72,27 @@ const MONSTERS_IMAGES = [
     )
   ),
   // wolf (img 20)
-  h.decompress(atob("kEggmqiMAiIAFB4QEB1QPPiNEmcAmYACAgQOBgFECIIPPA4NEBYYSDBoIxCB6AOBAAQ1BB4YKBB6QLCCQQCDA4QPTFIX/BIQyDOYQPRCAP/FIRMBB6orB5gNBZgQPBS4gPR5inCGAILBGQQPUNAIOBdITTGB6BvCCQTPEVgIdCB6AQCNwQGBaITQDB6QOBAgSOCAAYPQUoSoFCoZ6BB5+qJYTMCGIoOCB58ACAIADJQgABBwIPPA")),
+  h.decompress(
+    atob(
+      "kEggmqiMAiIAFB4QEB1QPPiNEmcAmYACAgQOBgFECIIPPA4NEBYYSDBoIxCB6AOBAAQ1BB4YKBB6QLCCQQCDA4QPTFIX/BIQyDOYQPRCAP/FIRMBB6orB5gNBZgQPBS4gPR5inCGAILBGQQPUNAIOBdITTGB6BvCCQTPEVgIdCB6AQCNwQGBaITQDB6QOBAgSOCAAYPQUoSoFCoZ6BB5+qJYTMCGIoOCB58ACAIADJQgABBwIPPA"
+    )
+  ),
 ];
 
 const KNIGHT = 1;
-const FLOOR = 848;
-const NEWT = 2;
-const ANT = 3;
-const WOLF = 4;
-const EXIT = 100;
-const FOOD = 101;
-const GOLD = 102;
-const LIFE_POTION = 103;
-const TOMBSTONE = 104;
-const DAGGER = 105;
-const SWORD = 106;
-const LEATHER_HELMET = 107;
+const FLOOR = 100;
+const EXIT = 101;
+const TOMBSTONE = 102;
 
 function random_item(dungeon_level) {
-  return [DAGGER, SWORD, LEATHER_HELMET, FOOD, LIFE_POTION][randint(0, 4)];
+  return 300 + randint(1, 4);
 }
 
-const MISC_IMAGES = [
-  // exit (img 852)
+const ITEM_IMAGES = [
+  // gold (img 786)
   h.decompress(
     atob(
-      "kEgggjgmYAMB63/AAQPWiIADB4YIEB6WqogvHomqB6WqB4fuBwPuB4eqB6IvBAAQwCmYHDH4gPNAYURGIIPCogICH4YPOAYQPBogPBAYIPBH4oPNMYYABB4IFDP4oPNAgICBF4oKEB6ADBAILODGIQKDB6AAEBwgAKB55vGB7IA4"
+      "kEggmqiIAM1QPPiNEmYoCmYAGogRBB54OB93/9wQCCooPTBwPdBQIVGB6YADCowPU7ovECogPUAAw/MB5YvDNoY/LB5YADNoYPXF4YTFCAIPSGAhTEOAQPSNYyvJB55rDaYgACB6NEJ4YDEAAVEB6GqCAIAKBwIPPgAQBABQOBB54A=="
     )
   ),
   // food (img 660)
@@ -107,22 +101,10 @@ const MISC_IMAGES = [
       "kEggmqiIAM1QPPiImCmYAIogRBB6FVB4RNECAYPSBgIBBs3u913swQDB6EA/8zxAOGGIYPRAYIPBogNDqpYBBgIPR/4wBNgdV7vumfdCIIPWBoMzBwQ6BGQQPPVgQNGGAgPQxAPCCAQsCBoNVfoQPOCIQDBBAIRBBoQOB1QPRJ4WqCAWqBwwPSR4QRBB4INCZ4QPQogQCCIYNDmdEB6ApBogAEBoIFDBwIPPJQQAKGgQPOA="
     )
   ),
-  // gold (img 786)
-  h.decompress(
-    atob(
-      "kEggmqiIAM1QPPiNEmYoCmYAGogRBB54OB93/9wQCCooPTBwPdBQIVGB6YADCowPU7ovECogPUAAw/MB5YvDNoY/LB5YADNoYPXF4YTFCAIPSGAhTEOAQPSNYyvJB55rDaYgACB6NEJ4YDEAAVEB6GqCAIAKBwIPPgAQBABQOBB54A=="
-    )
-  ),
   // life potion (img 664)
   h.decompress(
     atob(
       "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
-    )
-  ),
-  // tombstone (img 856)
-  h.decompress(
-    atob(
-      "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA"
     )
   ),
   // dagger (img 417)
@@ -141,6 +123,26 @@ const MISC_IMAGES = [
   h.decompress(
     atob(
       "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPVNooPYgFV7sz7tViIQDB6YOFB4IQDB64ODqoPXCARNCAoIPXAIIPBAgQBCB66MDCgIPYKQR2DB7LUEZ5APOCAoyDB6dEFogAGogPQ1QQBABQOBB58ACAIAKBwIPPA="
+    )
+  ),
+];
+
+const MISC_IMAGES = [
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP/B/4P/B/4P/B6NEBxdEB6GqCAIAKBwIPPgAQBABQOBB54="
+    )
+  ),
+  // exit (img 852)
+  h.decompress(
+    atob(
+      "kEgggjgmYAMB63/AAQPWiIADB4YIEB6WqogvHomqB6WqB4fuBwPuB4eqB6IvBAAQwCmYHDH4gPNAYURGIIPCogICH4YPOAYQPBogPBAYIPBH4oPNMYYABB4IFDP4oPNAgICBF4oKEB6ADBAILODGIQKDB6AAEBwgAKB55vGB7IA4"
+    )
+  ),
+  // tombstone (img 856)
+  h.decompress(
+    atob(
+      "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA"
     )
   ),
 ];
@@ -240,21 +242,9 @@ const BORDER_IMAGES = [
   ),
 ];
 
-// brightness 0, contrast 70
-let floor_img = h.decompress(
-  atob(
-    "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP/B/4P/B/4P/B6NEBxdEB6GqCAIAKBwIPPgAQBABQOBB54="
-  )
-);
+const IMAGES = [MONSTERS_IMAGES, MISC_IMAGES, BORDER_IMAGES, ITEM_IMAGES];
 
-function random_monster(dungeon_level) {
-  //TODO: have a min xp and max xp requirement instead
-  if (dungeon_level <= 2) {
-    return randint(NEWT, ANT);
-  } else {
-    return randint(NEWT, WOLF);
-  }
-}
+// brightness 0, contrast 70
 
 // types of monster stats
 const MAX_HP = 0;
@@ -264,17 +254,45 @@ const SPEED = 3;
 const DMG_DICES_NUM = 4;
 const DMG_DICES = 5;
 const DMG_BONUS = 6;
-const XP = 7;
-const REGENERATION = 8;
+const REGENERATION = 7;
+const XP = 8;
+const MOVE_ALGORITHM = 9;
 
 const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf"];
-const MONSTERS_STATS = [
+let MONSTERS_STATS = [
   null,
-  new Int16Array([10, 10, 4, 6, 1, 4, 0, 0, 100]), // Player
-  new Int16Array([ 4, 10, 4, 8, 1, 4, 0, 200, 100]), // Newt
-  new Int16Array([ 6, 10, 8, 10, 1, 2, 0, 100, 100]), // Ant
-  new Int16Array([15, 10, 6, 4, 1, 4, 0, 400, 100]), // Wolf
-]
+  new Int16Array([10, 10, 4, 6, 1, 4, 0, 100, 0, 0]), // Player
+  new Int16Array([4, 10, 4, 8, 1, 4, 0, 100, 200, 1]), // Newt
+  new Int16Array([6, 10, 8, 10, 1, 2, 0, 100, 100, 1]), // Ant
+  new Int16Array([15, 10, 6, 4, 1, 4, 0, 100, 400, 1]), // Wolf
+];
+
+// types of item stats (on top of monster stats)
+const VALUE = 8;
+const HP = 9;
+const SATIATION = 10;
+const SLOT = 11; // is the item a consumable or does it occupy an equipment slot
+
+// stats increments for each item
+const ITEMS_STATS = [
+  null, // gold
+  new Int8Array([0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 400, 0]), // food
+  new Int8Array([0, 0, 0, 0, 0, 0, 0, 0, 100, 8, 10, 0]), // life potion
+  new Int8Array([0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
+  new Int8Array([0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
+  new Int8Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
+];
+
+const ITEMS = [
+  "Gold",
+  "Food",
+  "Life Potion",
+  "Dagger",
+  "Sword",
+  "Leather helmet",
+];
+
+const ITEMS_MSGS = [null, "Yum Yum", "You heal", null, null, null];
 
 class Creature {
   constructor(monster_type, position) {
@@ -301,38 +319,21 @@ class Creature {
   }
   item_effect(item, picking) {
     // apply / remove effect of item on stats
-    if (item == DAGGER) {
-      //TODO: factorize code
-      if (picking) {
-        this.stats[ATTACK] += 2;
-      } else {
-        this.stats[ATTACK] -= 2;
-      }
-    } else if (item == SWORD) {
-      if (picking) {
-        this.stats[DMG_DICES_NUM] = 1;
-        this.stats[DMG_DICES] = 6;
-        this.stats[DMG_BONUS] = 0;
-      } else {
-        this.stats[DMG_DICES_NUM] = 1;
-        this.stats[DMG_DICES] = 4;
-        this.stats[DMG_BONUS] = 0;
-      }
-    } else if (item == LEATHER_HELMET) {
-      //TODO: factorize code
-      if (picking) {
-        this.stats[AC] += 1;
-      } else {
-        this.stats[AC] -= 1;
-      }
+    let stats = ITEMS_STATS[item];
+    let mod;
+    if (picking) {
+      mod = 1;
     } else {
-      console.log("unknown item taking effect", item);
+      mod = -1;
+    }
+    for (let i = 0; i <= REGENERATION; i++) {
+      this.stats[i] += mod * stats[i];
     }
   }
   treasure() {
     // let's have a 40% change of dropping something
     if (Math.random() < 0.4) {
-      return [FOOD, GOLD, LIFE_POTION][randint(0, 2)];
+      return 300 + randint(0, 2);
     } else {
       return FLOOR;
     }
@@ -349,7 +350,7 @@ class Creature {
       // we are just beside player, attack
       return this.attack(game.player);
     } else {
-      if (this.monster_type <= WOLF) {
+      if (this.stats[MOVE_ALGORITHM] == 1) {
         if (xdiff * ydiff < 9) {
           if (xdiff != 0) {
             let destination = { x: this.position.x, y: this.position.y };
@@ -375,8 +376,6 @@ class Creature {
             game.map.move(this, destination);
           }
         }
-      } else {
-        console.log("TODO: move towards player");
       }
       return;
     }
@@ -469,6 +468,7 @@ class Map {
     this.height = height;
     this.seed = E.hwRand();
     this.level = dungeon_level;
+    this.compute_allowed_monsters();
     E.srand(this.seed);
     this.map = new Uint16Array(width * height);
     let rooms_number = 4;
@@ -504,6 +504,31 @@ class Map {
       this.secret = this.find_secret(this.hidden_room);
     }
   }
+
+  compute_allowed_monsters() {
+    let min_xp = 0;
+    if (this.level >= 4) {
+      min_xp = 100 * Math.pow(2, this.level - 4);
+    }
+    let max_xp = 100 * Math.pow(2, this.level - 1);
+    let min_index = 2;
+    let max_index = 2;
+    let prec_xp = 0;
+    MONSTERS_STATS.forEach((m, i) => {
+      if (i >= 2) {
+        if (m[XP] <= max_xp) {
+          max_index = i;
+        }
+        if (m[XP] >= min_xp && prec_xp < min_xp) {
+          min_index = i;
+        }
+        prec_xp = m[XP];
+      }
+    });
+    this.min_monster_index = min_index;
+    this.max_monster_index = max_index;
+  }
+
   find_secret(room) {
     // find where to place a secret door around hidden room
     let candidates = [];
@@ -578,7 +603,7 @@ class Map {
       return false;
     }
     let tile = this.get_cell(position);
-    return tile != 0 && (tile < 200 || tile > 300);
+    return tile != 0 && (tile < 200 || tile >= 300);
   }
   compute_border_shapes(start_x, end_x, start_y, end_y) {
     let map = this.map;
@@ -636,7 +661,7 @@ class Map {
   generate_monster(room, monsters) {
     //TODO: we need a way to fail
     let monster_position = room.random_free_position(this);
-    let monster_type = random_monster(this.level);
+    let monster_type = randint(this.min_monster_index, this.max_monster_index);
     monsters.push(new Creature(monster_type, monster_position));
     this.set_cell(monster_position, monster_type);
   }
@@ -703,15 +728,13 @@ class Map {
         if (content === undefined || content == 0) {
           continue;
         }
-        if (content == FLOOR) {
-          g.drawImage(floor_img, (x + 2) * 32, (y + 2) * 32);
-        } else if (content >= 200) {
-          g.drawImage(BORDER_IMAGES[content - 200], (x + 2) * 32, (y + 2) * 32);
-        } else if (content >= 100) {
-          g.drawImage(MISC_IMAGES[content - 100], (x + 2) * 32, (y + 2) * 32);
-        } else {
-          g.drawImage(MONSTERS_IMAGES[content], (x + 2) * 32, (y + 2) * 32);
-        }
+        let image_type = Math.floor(content / 100);
+        let image_number = content % 100;
+        g.drawImage(
+          IMAGES[image_type][image_number],
+          (x + 2) * 32,
+          (y + 2) * 32
+        );
       }
     }
   }
@@ -726,8 +749,7 @@ class Game {
   constructor() {
     this.monsters = [];
     this.player = new Creature(KNIGHT);
-    this.weapon = null;
-    this.helmet = null;
+    this.equiped = [null, null, null, null];
     this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.time = 0;
@@ -739,7 +761,9 @@ class Game {
     Bangle.setLocked(false);
   }
   rest() {
-    this.msg("you rest" + ".".repeat((game.time / game.player.stats[SPEED]) % 3));
+    this.msg(
+      "you rest" + ".".repeat((game.time / game.player.stats[SPEED]) % 3)
+    );
     if (this.map.secret !== null) {
       let secret_pos = this.map.secret[1];
       if (
@@ -836,8 +860,7 @@ class Game {
       g.getHeight() -
       Math.round((this.player.hp * g.getHeight()) / this.player.stats[MAX_HP]);
     let satiation_y =
-      g.getHeight() -
-      Math.round((this.player.satiation * g.getHeight()) / 800);
+      g.getHeight() - Math.round((this.player.satiation * g.getHeight()) / 800);
     let left_width = g.getWidth() - MAP_WIDTH;
     g.setColor(0, 0, 0).fillRect(MAP_WIDTH, 0, g.getWidth(), g.getHeight());
     g.setColor(1, 0, 0).fillRect(
@@ -873,7 +896,7 @@ class Game {
     if (destination_content < 100) {
       // attack
       this.attack(destination);
-    } else if (destination_content == 100) {
+    } else if (destination_content == EXIT) {
       // we go down to next level
       this.dungeon_level += 1;
       E.showMessage("down we go to level " + this.dungeon_level + " ...");
@@ -881,53 +904,55 @@ class Game {
       this.start();
     } else {
       // move
-      if (this.dropping !== null) {
-        this.map.set_cell(this.player.position, this.dropping);
-        this.dropping = null;
-      }
-      if (destination_content != FLOOR) {
+      let start_position = {
+        x: this.player.position.x,
+        y: this.player.position.y,
+      };
+      if (destination_content >= 300) {
         // pick item
-        if (destination_content == FOOD) {
-          this.player.satiation = Math.min(this.player.satiation + 400, 800);
-          this.msg("Yum Yum");
-        } else if (destination_content == GOLD) {
-          let amount = randint(1, 10);
+        let item = destination_content - 300;
+        if (item == 0) {
+          // gold
+          let amount = randint(1, 10); //TODO level based amount
           this.player.gold += amount;
           this.msg("" + amount + " gold");
-        } else if (destination_content == LIFE_POTION) {
-          this.player.hp = Math.min(
-            this.player.stats[MAX_HP],
-            this.player.hp + randint(1, 8)
+        } else {
+          console.log("sat was", this.player.satiation);
+          console.log(
+            "satiation for",
+            item,
+            "is",
+            ITEMS_STATS[item][SATIATION],
+            "stats",
+            ITEMS_STATS[item]
           );
-          this.msg("You heal");
-        } else if (
-          destination_content == DAGGER ||
-          destination_content == SWORD
-        ) {
-          if (destination_content == DAGGER) {
-            this.msg("Dagger picked");
-          } else {
-            this.msg("Sword picked");
+          this.player.satiation += ITEMS_STATS[item][SATIATION];
+          this.player.satiation = Math.min(800, this.player.satiation);
+          console.log("sat is now", this.player.satiation);
+          this.player.hp += ITEMS_STATS[item][HP];
+          this.player.hp = Math.min(this.player.stats[MAX_HP], this.player.hp);
+          if (ITEMS_MSGS[item] !== null) {
+            this.msg(ITEMS_MSGS[item]);
           }
-          this.dropping = this.weapon;
-          if (this.dropping !== null) {
-            this.player.item_effect(this.dropping, false);
+          let slot = ITEMS_STATS[item][SLOT];
+          if (slot != 0) {
+            this.dropping = this.equiped[slot];
+            console.log("dropping", this.dropping);
+            if (this.dropping !== null) {
+              this.player.item_effect(this.dropping, false);
+              this.msg("Dropping " + ITEMS[item]);
+            }
+            this.equiped[slot] = item;
+            this.msg(ITEMS[item] + " equiped");
           }
-          this.player.item_effect(destination_content, true);
-          this.weapon = destination_content;
-        } else if (destination_content == LEATHER_HELMET) {
-          // TODO: factorize code for all item types
-          this.msg("Leather helmet picked");
-          this.dropping = this.helmet;
-          if (this.dropping !== null) {
-            this.player.item_effect(this.dropping, false);
-          }
-          this.player.item_effect(destination_content, true);
-          this.helmet = destination_content;
+          this.player.item_effect(item, true);
         }
       }
-
       this.map.move(game.player, destination);
+      if (this.dropping !== null) {
+        this.map.set_cell(start_position, this.dropping);
+        this.dropping = null;
+      }
     }
     if (!this.in_menu) {
       this.advance_time();
@@ -940,7 +965,10 @@ class Game {
     while (true) {
       this.time += 1;
       if (this.time % this.player.stats[REGENERATION] == 0) {
-        this.player.hp = Math.min(this.player.hp + 1, this.player.stats[MAX_HP]);
+        this.player.hp = Math.min(
+          this.player.hp + 1,
+          this.player.stats[MAX_HP]
+        );
       }
       this.monsters.forEach((monster) => {
         if (this.time % monster.stats[SPEED] == 0) {
