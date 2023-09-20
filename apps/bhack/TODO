@@ -1,11 +1,14 @@
+pb:
+    - overflow messages
 
+***************
+
+- avoir % de chance de detecter secrets
 - ecran d'accueil
 
 - objets
     -> armes
-    -> bouffe
     -> armure
-    -> pognon 
 
 - xp
     -> on peut donner un choix binaire de talents
@@ -17,4 +20,3 @@
 
 - monstres
 
-- bouton pour rester sur place ?

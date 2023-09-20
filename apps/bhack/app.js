@@ -51,8 +51,6 @@ let h = require("heatshrink");
 //     return coordinates_touch(room1[0], room1[2], room2[0], room2[2]) && coordinates_touch(room1[1], room1[3], room2[1], room2[3]);
 // }
 
-const MONSTERS = [undefined, "Player", "Newt", "Ant"];
-const MONSTERS_XP = new Uint16Array([0, 0, 200, 100]);
 
 const MONSTERS_IMAGES = [
   undefined,
@@ -74,12 +72,15 @@ const MONSTERS_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB54JGJwYGCB6YIDgHd93diIHCB6YRDiPu91VqoPUJAgPC7tVF4oPPNg8RFwYPTBgZtCeAgPSRgxNEK4QPQJoqMBPAQPVgH/qotBBAINDN4oPPmYsB/6zDCAYPSIgVVBgoPUohwERYYDCogPQ1QQBAA0AAYQOBB58ACAIAKBwIPP"
     )
   ),
+  // wolf (img 20)
+  h.decompress(atob("kEggmqiMAiIAFB4QEB1QPPiNEmcAmYACAgQOBgFECIIPPA4NEBYYSDBoIxCB6AOBAAQ1BB4YKBB6QLCCQQCDA4QPTFIX/BIQyDOYQPRCAP/FIRMBB6orB5gNBZgQPBS4gPR5inCGAILBGQQPUNAIOBdITTGB6BvCCQTPEVgIdCB6AQCNwQGBaITQDB6QOBAgSOCAAYPQUoSoFCoZ6BB5+qJYTMCGIoOCB58ACAIADJQgABBwIPPA")),
 ];
 
 const KNIGHT = 1;
 const FLOOR = 848;
 const NEWT = 2;
 const ANT = 3;
+const WOLF = 4;
 const EXIT = 100;
 const FOOD = 101;
 const GOLD = 102;
@@ -246,47 +247,53 @@ let floor_img = h.decompress(
   )
 );
 
-function random_monster() {
-  // TODO: use dungeon level
-  return randint(NEWT, ANT);
+function random_monster(dungeon_level) {
+  //TODO: have a min xp and max xp requirement instead
+  if (dungeon_level <= 2) {
+    return randint(NEWT, ANT);
+  } else {
+    return randint(NEWT, WOLF);
+  }
 }
+
+// types of monster stats
+const MAX_HP = 0;
+const AC = 1;
+const ATTACK = 2;
+const SPEED = 3;
+const DMG_DICES_NUM = 4;
+const DMG_DICES = 5;
+const DMG_BONUS = 6;
+const XP = 7;
+const REGENERATION = 8;
+
+const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf"];
+const MONSTERS_STATS = [
+  null,
+  new Int16Array([10, 10, 4, 6, 1, 4, 0, 0, 100]), // Player
+  new Int16Array([ 4, 10, 4, 8, 1, 4, 0, 200, 100]), // Newt
+  new Int16Array([ 6, 10, 8, 10, 1, 2, 0, 100, 100]), // Ant
+  new Int16Array([15, 10, 6, 4, 1, 4, 0, 400, 100]), // Wolf
+]
 
 class Creature {
   constructor(monster_type, position) {
     if (monster_type == KNIGHT) {
-      this.hp = 10;
-      this.ac = 10;
-      this.attack_modifier = 4;
-      this.speed = 6;
-      this.damages = [1, 4, 0];
-      this.satiation = 1000;
       this.gold = 0;
       this.level = 1;
-    } else if (monster_type == NEWT) {
-      this.hp = 4;
-      this.ac = 10;
-      this.attack_modifier = 4;
-      this.speed = 8;
-      this.damages = [1, 4, 0];
-    } else if (monster_type == ANT) {
-      this.hp = 6;
-      this.ac = 10;
-      this.attack_modifier = 8;
-      this.speed = 10;
-      this.damages = [1, 2, 0];
+      this.satiation = 800;
+      this.stats = Int16Array(MONSTERS_STATS[monster_type]);
     } else {
-      console.log("unknown monster");
+      this.stats = MONSTERS_STATS[monster_type];
     }
-    this.xp = MONSTERS_XP[monster_type];
-    this.max_hp = this.hp;
+    this.hp = this.stats[MAX_HP];
     this.position = position;
     this.monster_type = monster_type;
-    this.regeneration = 100;
   }
   add_xp(xp) {
     let next_level_threshold = 1 << (9 + this.level);
-    this.xp += xp;
-    if (this.xp >= next_level_threshold) {
+    this.stats[XP] += xp;
+    if (this.stats[XP] >= next_level_threshold) {
       // we level up
       this.level += 1;
       game.level_up();
@@ -295,23 +302,28 @@ class Creature {
   item_effect(item, picking) {
     // apply / remove effect of item on stats
     if (item == DAGGER) {
+      //TODO: factorize code
       if (picking) {
-        this.attack_modifier += 2;
+        this.stats[ATTACK] += 2;
       } else {
-        this.attack_modifier -= 2;
+        this.stats[ATTACK] -= 2;
       }
     } else if (item == SWORD) {
       if (picking) {
-        this.damages = [1, 6, 0];
+        this.stats[DMG_DICES_NUM] = 1;
+        this.stats[DMG_DICES] = 6;
+        this.stats[DMG_BONUS] = 0;
       } else {
-        this.damages = [1, 4, 0];
+        this.stats[DMG_DICES_NUM] = 1;
+        this.stats[DMG_DICES] = 4;
+        this.stats[DMG_BONUS] = 0;
       }
     } else if (item == LEATHER_HELMET) {
       //TODO: factorize code
       if (picking) {
-        this.ac += 1;
+        this.stats[AC] += 1;
       } else {
-        this.ac -= 1;
+        this.stats[AC] -= 1;
       }
     } else {
       console.log("unknown item taking effect", item);
@@ -337,7 +349,7 @@ class Creature {
       // we are just beside player, attack
       return this.attack(game.player);
     } else {
-      if (this.monster_type <= 3) {
+      if (this.monster_type <= WOLF) {
         if (xdiff * ydiff < 9) {
           if (xdiff != 0) {
             let destination = { x: this.position.x, y: this.position.y };
@@ -370,11 +382,11 @@ class Creature {
     }
   }
   attack(target) {
-    if (randint(1, 20) + this.attack_modifier >= target.ac) {
+    if (randint(1, 20) + this.stats[ATTACK] >= target.stats[AC]) {
       // attack success
-      let damages = this.damages[2];
-      for (let i = 0; i < this.damages[0]; i++) {
-        damages += randint(1, this.damages[1]);
+      let damages = this.stats[DMG_BONUS];
+      for (let i = 0; i < this.stats[DMG_DICES_NUM]; i++) {
+        damages += randint(1, this.stats[DMG_DICES]);
       }
       target.hp -= damages;
       if (target.hp <= 0) {
@@ -386,7 +398,7 @@ class Creature {
         } else {
           game.map.set_cell(target.position, target.treasure());
           game.msg(target.name() + " dies");
-          this.add_xp(target.xp);
+          this.add_xp(target.stats[XP]);
         }
       } else {
         if (target.monster_type == KNIGHT) {
@@ -456,6 +468,7 @@ class Map {
     this.width = width;
     this.height = height;
     this.seed = E.hwRand();
+    this.level = dungeon_level;
     E.srand(this.seed);
     this.map = new Uint16Array(width * height);
     let rooms_number = 4;
@@ -623,7 +636,7 @@ class Map {
   generate_monster(room, monsters) {
     //TODO: we need a way to fail
     let monster_position = room.random_free_position(this);
-    let monster_type = random_monster();
+    let monster_type = random_monster(this.level);
     monsters.push(new Creature(monster_type, monster_position));
     this.set_cell(monster_position, monster_type);
   }
@@ -721,12 +734,12 @@ class Game {
     this.dungeon_level = 1;
     this.display();
     this.in_menu = false;
-    this.locked = false;
+    this.locked = false; // disable input if true
     this.message = null;
     Bangle.setLocked(false);
   }
   rest() {
-    this.msg("you rest" + ".".repeat((game.time / game.player.speed) % 3));
+    this.msg("you rest" + ".".repeat((game.time / game.player.stats[SPEED]) % 3));
     if (this.map.secret !== null) {
       let secret_pos = this.map.secret[1];
       if (
@@ -755,22 +768,22 @@ class Game {
   }
   level_up() {
     let hp_increment = randint(1, 10);
-    let old_max_hp = this.player.max_hp;
-    let old_attack = this.player.attack_modifier;
-    this.player.max_hp += hp_increment;
+    let old_max_hp = this.player.stats[MAX_HP];
+    let old_attack = this.player.stats[ATTACK];
+    this.player.stats[MAX_HP] += hp_increment;
     this.player.hp += hp_increment;
-    this.player.attack_modifier += 1;
+    this.player.stats[ATTACK] += 1;
     this.in_menu = true;
     setTimeout(() => {
       E.showPrompt(
         "stats changes:\nhp: " +
           old_max_hp +
           " -> " +
-          this.player.max_hp +
+          this.player.stats[MAX_HP] +
           "\nattack: " +
           old_attack +
           " -> " +
-          this.player.attack_modifier,
+          this.player.stats[ATTACK],
         { title: "Level Up!", buttons: { One: 1, Two: 2 } }
       ).then(function (c) {
         game.in_menu = false;
@@ -821,10 +834,10 @@ class Game {
   display_stats() {
     let hp_y =
       g.getHeight() -
-      Math.round((this.player.hp * g.getHeight()) / this.player.max_hp);
+      Math.round((this.player.hp * g.getHeight()) / this.player.stats[MAX_HP]);
     let satiation_y =
       g.getHeight() -
-      Math.round((this.player.satiation * g.getHeight()) / 1000);
+      Math.round((this.player.satiation * g.getHeight()) / 800);
     let left_width = g.getWidth() - MAP_WIDTH;
     g.setColor(0, 0, 0).fillRect(MAP_WIDTH, 0, g.getWidth(), g.getHeight());
     g.setColor(1, 0, 0).fillRect(
@@ -875,7 +888,7 @@ class Game {
       if (destination_content != FLOOR) {
         // pick item
         if (destination_content == FOOD) {
-          this.player.satiation = Math.min(this.player.satiation + 600, 1000);
+          this.player.satiation = Math.min(this.player.satiation + 400, 800);
           this.msg("Yum Yum");
         } else if (destination_content == GOLD) {
           let amount = randint(1, 10);
@@ -883,7 +896,7 @@ class Game {
           this.msg("" + amount + " gold");
         } else if (destination_content == LIFE_POTION) {
           this.player.hp = Math.min(
-            this.player.max_hp,
+            this.player.stats[MAX_HP],
             this.player.hp + randint(1, 8)
           );
           this.msg("You heal");
@@ -926,15 +939,15 @@ class Game {
     this.locked = true;
     while (true) {
       this.time += 1;
-      if (this.time % this.player.regeneration == 0) {
-        this.player.hp = Math.min(this.player.hp + 1, this.player.max_hp);
+      if (this.time % this.player.stats[REGENERATION] == 0) {
+        this.player.hp = Math.min(this.player.hp + 1, this.player.stats[MAX_HP]);
       }
       this.monsters.forEach((monster) => {
-        if (this.time % monster.speed == 0) {
+        if (this.time % monster.stats[SPEED] == 0) {
           monster.move();
         }
-        if (this.time % monster.regeneration == 0) {
-          monster.hp = Math.min(monster.hp + 1, monster.max_hp);
+        if (this.time % monster.stats[REGENERATION] == 0) {
+          monster.hp = Math.min(monster.hp + 1, monster.stats[MAX_HP]);
         }
       });
       if (this.time % 300 == 0) {
@@ -943,7 +956,7 @@ class Game {
           this.monsters
         );
       }
-      if (this.time % this.player.speed == 0) {
+      if (this.time % this.player.stats[SPEED] == 0) {
         this.locked = false;
         return;
       }
