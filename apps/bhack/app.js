@@ -77,6 +77,8 @@ const MONSTERS_IMAGES = [
       "kEggmqiMAiIAFB4QEB1QPPiNEmcAmYACAgQOBgFECIIPPA4NEBYYSDBoIxCB6AOBAAQ1BB4YKBB6QLCCQQCDA4QPTFIX/BIQyDOYQPRCAP/FIRMBB6orB5gNBZgQPBS4gPR5inCGAILBGQQPUNAIOBdITTGB6BvCCQTPEVgIdCB6AQCNwQGBaITQDB6QOBAgSOCAAYPQUoSoFCoZ6BB5+qJYTMCGIoOCB58ACAIADJQgABBwIPPA"
     )
   ),
+  // goblin (img 71)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYACFQIFDAANECIIPPBwndqoQGB6gOCiIPaFoYACB7IABqvM5hRFB6QuB5kAu/d7t3B6wsBFQVmF4NmB65sDJ4hyDB6LrDRwYABK4QPTaAYvBBgSSDB6hQEqpQCf44PNJATwEB6tENooVFogPQ1QQBAAoVEBwIPPgAQBABQOBB54A=="))
 ];
 
 const KNIGHT = 1;
@@ -85,7 +87,7 @@ const EXIT = 101;
 const TOMBSTONE = 102;
 
 function random_item(dungeon_level) {
-  return 300 + randint(1, 4);
+  return 300 + randint(1, 6);
 }
 
 const ITEM_IMAGES = [
@@ -125,6 +127,8 @@ const ITEM_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPVNooPYgFV7sz7tViIQDB6YOFB4IQDB64ODqoPXCARNCAoIPXAIIPBAgQBCB66MDCgIPYKQR2DB7LUEZ5APOCAoyDB6dEFogAGogPQ1QQBABQOBB58ACAIAKBwIPPA="
     )
   ),
+  // leather gauntlet (img 533)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYADFYIGEogRBB54OFmfdJwQICB6/dqoSDB6gnDB4IRDB6hKEBgQtCAQQPSBYURBwQRDB6oOC1VVGAwPTBQNV7vd1QwDHIQPRBgIQCAgazDB6YMCAAJSBBwYPTNoIJBCIRxCfAQPRdYIDBGQYOEB6VECAIyCqr3CAAVEB6GqCAIABCIIABAwQABBwIPPgAQBABQOBB54A==")),
 ];
 
 const MISC_IMAGES = [
@@ -258,13 +262,14 @@ const REGENERATION = 7;
 const XP = 8;
 const MOVE_ALGORITHM = 9;
 
-const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf"];
+const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin"];
 let MONSTERS_STATS = [
   null,
   new Int16Array([10, 10, 4, 6, 1, 4, 0, 100, 0, 0]), // Player
-  new Int16Array([4, 10, 4, 8, 1, 4, 0, 100, 200, 1]), // Newt
-  new Int16Array([6, 10, 8, 10, 1, 2, 0, 100, 100, 1]), // Ant
-  new Int16Array([15, 10, 6, 4, 1, 4, 0, 100, 400, 1]), // Wolf
+  new Int16Array([4, 10, 4, 8, 1, 4, 0, 100, 100, 1]), // Newt
+  new Int16Array([6, 10, 8, 10, 1, 2, 0, 100, 150, 1]), // Ant
+  new Int16Array([10, 10, 6, 6, 1, 4, 0, 100, 400, 1]), // Wolf
+  new Int16Array([8, 10, 6, 7, 1, 6, 0, 90, 400, 1]), // Goblin
 ];
 
 // types of item stats (on top of monster stats)
@@ -276,11 +281,12 @@ const SLOT = 11; // is the item a consumable or does it occupy an equipment slot
 // stats increments for each item
 const ITEMS_STATS = [
   null, // gold
-  new Int8Array([0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 400, 0]), // food
-  new Int8Array([0, 0, 0, 0, 0, 0, 0, 0, 100, 8, 10, 0]), // life potion
-  new Int8Array([0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
-  new Int8Array([0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
-  new Int8Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
+  new Int16Array([0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 400, 0]), // food
+  new Int16Array([0, 0, 0, 0, 0, 0, 0, 0, 100, 8, 10, 0]), // life potion
+  new Int16Array([0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
+  new Int16Array([0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 3]), // leather gauntlet
 ];
 
 const ITEMS = [
@@ -290,9 +296,10 @@ const ITEMS = [
   "Dagger",
   "Sword",
   "Leather helmet",
+  "Leather gauntlets"
 ];
 
-const ITEMS_MSGS = [null, "Yum Yum", "You heal", null, null, null];
+const ITEMS_MSGS = [null, "Yum Yum", "You heal", null, null, null, null];
 
 class Creature {
   constructor(monster_type, position) {
@@ -749,7 +756,7 @@ class Game {
   constructor() {
     this.monsters = [];
     this.player = new Creature(KNIGHT);
-    this.equiped = [null, null, null, null];
+    this.equiped = [null, null, null, null, null];
     this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.time = 0;
@@ -917,18 +924,8 @@ class Game {
           this.player.gold += amount;
           this.msg("" + amount + " gold");
         } else {
-          console.log("sat was", this.player.satiation);
-          console.log(
-            "satiation for",
-            item,
-            "is",
-            ITEMS_STATS[item][SATIATION],
-            "stats",
-            ITEMS_STATS[item]
-          );
           this.player.satiation += ITEMS_STATS[item][SATIATION];
           this.player.satiation = Math.min(800, this.player.satiation);
-          console.log("sat is now", this.player.satiation);
           this.player.hp += ITEMS_STATS[item][HP];
           this.player.hp = Math.min(this.player.stats[MAX_HP], this.player.hp);
           if (ITEMS_MSGS[item] !== null) {
@@ -937,7 +934,6 @@ class Game {
           let slot = ITEMS_STATS[item][SLOT];
           if (slot != 0) {
             this.dropping = this.equiped[slot];
-            console.log("dropping", this.dropping);
             if (this.dropping !== null) {
               this.player.item_effect(this.dropping, false);
               this.msg("Dropping " + ITEMS[item]);
@@ -950,7 +946,7 @@ class Game {
       }
       this.map.move(game.player, destination);
       if (this.dropping !== null) {
-        this.map.set_cell(start_position, this.dropping);
+        this.map.set_cell(start_position, 300 + this.dropping);
         this.dropping = null;
       }
     }
@@ -962,6 +958,7 @@ class Game {
   }
   advance_time() {
     this.locked = true;
+    //TODO: avoid the big loop ?
     while (true) {
       this.time += 1;
       if (this.time % this.player.stats[REGENERATION] == 0) {
