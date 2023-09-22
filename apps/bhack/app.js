@@ -78,7 +78,11 @@ const MONSTERS_IMAGES = [
     )
   ),
   // goblin (img 71)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYACFQIFDAANECIIPPBwndqoQGB6gOCiIPaFoYACB7IABqvM5hRFB6QuB5kAu/d7t3B6wsBFQVmF4NmB65sDJ4hyDB6LrDRwYABK4QPTaAYvBBgSSDB6hQEqpQCf44PNJATwEB6tENooVFogPQ1QQBAAoVEBwIPPgAQBABQOBB54A=="))
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYACFQIFDAANECIIPPBwndqoQGB6gOCiIPaFoYACB7IABqvM5hRFB6QuB5kAu/d7t3B6wsBFQVmF4NmB65sDJ4hyDB6LrDRwYABK4QPTaAYvBBgSSDB6hQEqpQCf44PNJATwEB6tENooVFogPQ1QQBAAoVEBwIPPgAQBABQOBB54A=="
+    )
+  ),
 ];
 
 const KNIGHT = 1;
@@ -87,7 +91,7 @@ const EXIT = 101;
 const TOMBSTONE = 102;
 
 function random_item(dungeon_level) {
-  return 300 + randint(1, 6);
+  return 300 + randint(1, ITEMS.length - 1);
 }
 
 const ITEM_IMAGES = [
@@ -115,12 +119,6 @@ const ITEM_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP0RAIVIB6v/9wQHB6szCBAPUCBQPVCBIPWCAYCBB7QQBqvdCAYPYCAwPZeoQPUogQIAAVEB6GqCAIAKBwIPPgAQBABQOBB54A=="
     )
   ),
-  // sword (img 411)
-  h.decompress(
-    atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"
-    )
-  ),
   // leather helmet (img 465)
   h.decompress(
     atob(
@@ -128,7 +126,35 @@ const ITEM_IMAGES = [
     )
   ),
   // leather gauntlet (img 533)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYADFYIGEogRBB54OFmfdJwQICB6/dqoSDB6gnDB4IRDB6hKEBgQtCAQQPSBYURBwQRDB6oOC1VVGAwPTBQNV7vd1QwDHIQPRBgIQCAgazDB6YMCAAJSBBwYPTNoIJBCIRxCfAQPRdYIDBGQYOEB6VECAIyCqr3CAAVEB6GqCAIABCIIABAwQABBwIPPgAQBABQOBB54A==")),
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYADFYIGEogRBB54OFmfdJwQICB6/dqoSDB6gnDB4IRDB6hKEBgQtCAQQPSBYURBwQRDB6oOC1VVGAwPTBQNV7vd1QwDHIQPRBgIQCAgazDB6YMCAAJSBBwYPTNoIJBCIRxCfAQPRdYIDBGQYOEB6VECAIyCqr3CAAVEB6GqCAIABCIIABAwQABBwIPPgAQBABQOBB54A=="
+    )
+  ),
+  // sword (img 411)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"
+    )
+  ),
+  // mace (img 450)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAGgADCogRBB54MHJwQFCB64KBogODB7AOBAYP/H5YPNJgoFCB6wKBS4ZSCB7AQBOIYPXgFVJYSvKB50A7oqCd4YPVFoTVGB6hqCBw4PTBxYPSUoIOKogPQ1QQBABQOBB58ACAIAKBwIPP"
+    )
+  ),
+  // leather boots (img 541)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB58zJQoQGB6MAKImqCAwPSAAwPYAQPdBgICCB6xvBiNVgFVAQIPZ1QMCF5YPSF4JXBB7BPBCAPdGIQRDB6bQBFoQSBWYgPTKAQxCqoyBBQIPTAwTTCCQXdAAIICB59EQwYRCCARWCB6BsBogAENwYVC1QPPRoQAKBwIPPA="
+    )
+  ),
+  // leather jacket (img 510)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYABFooICogRBB54ODGgmqCAYPTgERF4vdCAQPSBwNVBINVAIIFBCAQPWBIIRCB6wQBB4QxD7oCBB6gQEKIZ3BB6wADB4IOCB60RJQSUCB6yQFAYJuCB6qPDVwifKB5ZOBWAi/IB5lEKAgACSIUzogPQ1QQBAAKwEAAIIBBwIPPgAQBABQOBB54"
+    )
+  ),
 ];
 
 const MISC_IMAGES = [
@@ -281,12 +307,15 @@ const SLOT = 11; // is the item a consumable or does it occupy an equipment slot
 // stats increments for each item
 const ITEMS_STATS = [
   null, // gold
-  new Int16Array([0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 400, 0]), // food
+  new Int16Array([0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 200, 0]), // food
   new Int16Array([0, 0, 0, 0, 0, 0, 0, 0, 100, 8, 10, 0]), // life potion
   new Int16Array([0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
-  new Int16Array([0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
   new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
   new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 3]), // leather gauntlet
+  new Int16Array([0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
+  new Int16Array([0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, 1]), // mace
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 300, 0, 0, 3]), // leather boots
+  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 500, 0, 0, 4]), // leather jacket
 ];
 
 const ITEMS = [
@@ -294,19 +323,32 @@ const ITEMS = [
   "Food",
   "Life Potion",
   "Dagger",
-  "Sword",
   "Leather helmet",
-  "Leather gauntlets"
+  "Leather gauntlets",
+  "Sword",
+  "Mace",
+  "Leather boots",
+  "Leather jacket",
 ];
 
-const ITEMS_MSGS = [null, "Yum Yum", "You heal", null, null, null, null];
+const ITEMS_MSGS = [
+  null,
+  "Yum Yum",
+  "You heal",
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+];
 
 class Creature {
   constructor(monster_type, position) {
     if (monster_type == KNIGHT) {
       this.gold = 0;
       this.level = 1;
-      this.satiation = 800;
+      this.satiation = 400;
       this.stats = Int16Array(MONSTERS_STATS[monster_type]);
     } else {
       this.stats = MONSTERS_STATS[monster_type];
@@ -756,7 +798,7 @@ class Game {
   constructor() {
     this.monsters = [];
     this.player = new Creature(KNIGHT);
-    this.equiped = [null, null, null, null, null];
+    this.equiped = [null, null, null, null, null, null];
     this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.time = 0;
@@ -777,25 +819,29 @@ class Game {
         this.player.position.x == secret_pos.x &&
         this.player.position.y == secret_pos.y
       ) {
-        let r = this.map.hidden_room;
-        this.map.fill_room(r);
-        r.on_border((pos) => {
-          this.map.set_cell(pos, 200);
-        });
-        this.map.set_cell(this.map.secret[0], FLOOR);
-        this.map.compute_border_shapes(
-          Math.max(0, r.x - 2),
-          Math.min(this.map.width, r.x + r.width + 2),
-          Math.max(0, r.y - 2),
-          Math.min(this.map.height, r.y + r.height + 2)
-        );
-        this.msg("Secret found");
-        this.map.secret = null;
+        this.secret_found();
       }
     }
     this.advance_time();
     this.display();
     this.show_msg();
+  }
+  secret_found() {
+    let r = this.map.hidden_room;
+    this.map.fill_room(r);
+    this.map.set_cell(r.random_free_position(this.map), random_item());
+    r.on_border((pos) => {
+      this.map.set_cell(pos, 200);
+    });
+    this.map.set_cell(this.map.secret[0], FLOOR);
+    this.map.compute_border_shapes(
+      Math.max(0, r.x - 2),
+      Math.min(this.map.width, r.x + r.width + 2),
+      Math.max(0, r.y - 2),
+      Math.min(this.map.height, r.y + r.height + 2)
+    );
+    this.msg("Secret found");
+    this.map.secret = null;
   }
   level_up() {
     let hp_increment = randint(1, 10);
@@ -807,7 +853,9 @@ class Game {
     this.in_menu = true;
     setTimeout(() => {
       E.showPrompt(
-        "stats changes:\nhp: " +
+        "you are now level" +
+          this.player.level +
+          "\n\nstats changes:\nhp: " +
           old_max_hp +
           " -> " +
           this.player.stats[MAX_HP] +
@@ -867,7 +915,7 @@ class Game {
       g.getHeight() -
       Math.round((this.player.hp * g.getHeight()) / this.player.stats[MAX_HP]);
     let satiation_y =
-      g.getHeight() - Math.round((this.player.satiation * g.getHeight()) / 800);
+      g.getHeight() - Math.round((this.player.satiation * g.getHeight()) / 400);
     let left_width = g.getWidth() - MAP_WIDTH;
     g.setColor(0, 0, 0).fillRect(MAP_WIDTH, 0, g.getWidth(), g.getHeight());
     g.setColor(1, 0, 0).fillRect(
@@ -925,7 +973,7 @@ class Game {
           this.msg("" + amount + " gold");
         } else {
           this.player.satiation += ITEMS_STATS[item][SATIATION];
-          this.player.satiation = Math.min(800, this.player.satiation);
+          this.player.satiation = Math.min(400, this.player.satiation);
           this.player.hp += ITEMS_STATS[item][HP];
           this.player.hp = Math.min(this.player.stats[MAX_HP], this.player.hp);
           if (ITEMS_MSGS[item] !== null) {
@@ -936,7 +984,7 @@ class Game {
             this.dropping = this.equiped[slot];
             if (this.dropping !== null) {
               this.player.item_effect(this.dropping, false);
-              this.msg("Dropping " + ITEMS[item]);
+              this.msg("Dropping " + ITEMS[this.dropping]);
             }
             this.equiped[slot] = item;
             this.msg(ITEMS[item] + " equiped");
@@ -945,6 +993,15 @@ class Game {
         }
       }
       this.map.move(game.player, destination);
+      if (this.map.secret != null) {
+        // let's have a 30% chance of finding secrets
+        let secret_pos = this.map.secret[1];
+        if (destination.x == secret_pos.x && destination.y == secret_pos.y) {
+          if (Math.random() < 0.3) {
+            this.secret_found();
+          }
+        }
+      }
       if (this.dropping !== null) {
         this.map.set_cell(start_position, 300 + this.dropping);
         this.dropping = null;

@@ -4,11 +4,17 @@ pb:
 
 ***************
 
+- generateur aleatoire d'objets en fonction du niveau
+
+- il faut penser aux bonus sur les objets
+- potion de soin avec 1d8 au lieu de 8 ?
+
+- voir la fiche de perso en cliquant sur le bouton
+
 - balance ideas:
     - the more of the same monster you kill the less xp you get from it
     - gradually increase spawn rate on a level (restart when going down)
 
-- avoir % de chance de detecter secrets
 - ecran d'accueil
 
 - objets
@@ -24,4 +30,30 @@ pb:
 - salles speciales
 
 - monstres
+
+talents:
+- aggressive (+1 attack)
+- careful (+1 ac)
+- strong (+1 damage)
+
+- affinity with swords (+2 attack, +1 damage)
+- affinity with daggers (+2 attack, +1 damage)
+- affinity with maces (+2 attack, +1 damage)
+
+- hunter (more food from kills)
+- miser (more gold from kills)
+- xp (more xp from kills)
+
+- fast (-1 speed)
+- healthy (increase regen rate)
+- hardy (+2 hp/level)
+
+- secrets finder
+- traps finder
+- morphologist (know target max hp)
+
+- assassin (more critics)
+- evader (10% chance to evade attack)
+- brute (+2 damage)
+
 
