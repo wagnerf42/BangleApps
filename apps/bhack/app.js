@@ -93,10 +93,6 @@ const FLOOR = 100;
 const EXIT = 101;
 const TOMBSTONE = 102;
 
-function random_item(dungeon_level) {
-  return 300 + randint(1, ITEMS.length - 1);
-}
-
 const EDIBLE_IMAGES = [
   // gold (img 786)
   h.decompress(
@@ -374,7 +370,6 @@ class Creature {
   }
   item_effect(item, picking) {
     // apply / remove effect of item on stats
-    let stats = ITEMS_STATS[item];
     let mod;
     if (picking) {
       mod = 1;
@@ -382,7 +377,7 @@ class Creature {
       mod = -1;
     }
     for (let i = 0; i <= REGENERATION; i++) {
-      this.stats[i] += mod * stats[i];
+      this.stats[i] += mod * item.stat(i);
     }
   }
   treasure() {
@@ -522,11 +517,11 @@ class Room {
 }
 
 class Map {
-  constructor(width, height, monsters, player, dungeon_level) {
+  constructor(width, height, game) {
     this.width = width;
     this.height = height;
     this.seed = E.hwRand();
-    this.level = dungeon_level;
+    this.level = game.dungeon_level;
     this.compute_allowed_monsters();
     E.srand(this.seed);
     this.map = new Uint16Array(width * height);
@@ -546,14 +541,17 @@ class Map {
     this.set_cell(last_room.random_inner_position(this), EXIT);
 
     let first_room = rooms[0];
-    player.position = first_room.random_free_position(this);
-    this.set_cell(player.position, KNIGHT);
-    this.generate_monsters(rooms, monsters);
+    game.player.position = first_room.random_free_position(this);
+    this.set_cell(game.player.position, KNIGHT);
+    this.generate_monsters(rooms, game.monsters);
 
     // now generate some loot
+    let loot_position = rooms[randint(0, rooms.length - 1)].random_free_position(this);
+    let loot = new Item(randint(0, ITEMS.length-1), loot_position);
+    game.items.push(loot);
     this.set_cell(
-      rooms[randint(0, rooms.length - 1)].random_free_position(this),
-      random_item()
+      loot_position,
+      loot.tile()
     );
 
     this.rooms = rooms;
@@ -804,9 +802,31 @@ class Map {
   }
 }
 
+class Item {
+  constructor(type, position) {
+    this.type = type;
+    this.position = position;
+    this.bonus = 0;
+  }
+  tile() {
+    return this.type + 300;
+  }
+  stat(stat_index) {
+    return ITEMS_STATS[this.type][stat_index];
+  }
+  name() {
+    if (this.bonus == 0) {
+      return ITEMS[this.type];
+    } else {
+      return ITEMS[this.type] + " +" + this.bonus;
+    }
+  }
+}
+
 class Game {
   constructor() {
     this.monsters = [];
+    this.items = [];
     this.player = new Creature(KNIGHT);
     this.equiped = [null, null, null, null, null, null, null, null, null];
     this.dropping = null; // item which is dropped under us will but visible only after we move
@@ -845,7 +865,10 @@ class Game {
   secret_found() {
     let r = this.map.hidden_room;
     this.map.fill_room(r);
-    this.map.set_cell(r.random_free_position(this.map), random_item());
+    let item_position = r.random_free_position(this.map);
+    let new_item = new Item(randint(0, ITEMS.length-1), item_position);
+    game.items.push(new_item);
+    this.map.set_cell(item_position, new_item.tile());
     r.on_border((pos) => {
       this.map.set_cell(pos, 200);
     });
@@ -887,7 +910,7 @@ class Game {
     this.message = null;
   }
   start() {
-    this.map = new Map(30, 30, this.monsters, this.player, this.dungeon_level);
+    this.map = new Map(30, 30, this);
     this.screen = MAIN_SCREEN;
     this.intro_img = null; // let's free some memory ?
   }
@@ -973,6 +996,7 @@ class Game {
       this.dungeon_level += 1;
       E.showMessage("down we go to level " + this.dungeon_level + " ...");
       this.monsters = [];
+      this.items = [];
       this.start();
     } else {
       // move
@@ -999,17 +1023,20 @@ class Game {
         }
       } else if (destination_content >= 300) {
         // pick item
-        let item = destination_content - 300;
-        let slot = ITEMS_STATS[item][SLOT];
-        if (slot != 0) {
-          this.dropping = this.equiped[slot];
-          if (this.dropping !== null) {
-            this.player.item_effect(this.dropping, false);
-            this.msg("Dropping " + ITEMS[this.dropping]);
-          }
-          this.equiped[slot] = item;
-          this.msg(ITEMS[item] + " equiped");
+        let item_index = this.items.findIndex((i) => i.position.x == destination.x && i.position.y == destination.y);
+        let item = this.items[item_index];
+        this.items.splice(item_index, item_index);
+        let slot = item.stat(SLOT);
+        this.dropping = this.equiped[slot];
+        if (this.dropping !== null) {
+          this.player.item_effect(this.dropping, false);
+          this.msg("Dropping " + this.dropping.name());
+          this.dropping.position.x = start_position.x;
+          this.dropping.position.y = start_position.y;
+          this.items.push(this.dropping);
         }
+        this.equiped[slot] = item;
+        this.msg(item.name() + " equiped");
         this.player.item_effect(item, true);
       }
       this.map.move(game.player, destination);
@@ -1023,7 +1050,7 @@ class Game {
         }
       }
       if (this.dropping !== null) {
-        this.map.set_cell(start_position, 300 + this.dropping);
+        this.map.set_cell(start_position, this.dropping.tile());
         this.dropping = null;
       }
     }
