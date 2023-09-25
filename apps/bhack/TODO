@@ -1,5 +1,6 @@
 pb:
     - overflow messages
+    - undefined en prenant armure ?
 
 
 ***************
@@ -7,7 +8,6 @@ pb:
 - generateur aleatoire d'objets en fonction du niveau
 
 - il faut penser aux bonus sur les objets
-- potion de soin avec 1d8 au lieu de 8 ?
 
 - voir la fiche de perso en cliquant sur le bouton
 
@@ -15,11 +15,10 @@ pb:
     - the more of the same monster you kill the less xp you get from it
     - gradually increase spawn rate on a level (restart when going down)
 
-- ecran d'accueil
-
 - objets
     -> armes
     -> armure
+    -> bouclier
 
 - xp
     -> on peut donner un choix binaire de talents

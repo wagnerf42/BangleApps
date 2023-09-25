@@ -10,6 +10,7 @@ const MAP_HEIGHT = 5 * 32;
 const INTRO_SCREEN = 0;
 const MAIN_SCREEN = 1;
 const DIED_SCREEN = 2;
+const LEVEL_UP_SCREEN = 3;
 
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
@@ -83,6 +84,8 @@ const MONSTERS_IMAGES = [
       "kEggmqiIAM1QPPiNEmYACFQIFDAANECIIPPBwndqoQGB6gOCiIPaFoYACB7IABqvM5hRFB6QuB5kAu/d7t3B6wsBFQVmF4NmB65sDJ4hyDB6LrDRwYABK4QPTaAYvBBgSSDB6hQEqpQCf44PNJATwEB6tENooVFogPQ1QQBAAoVEBwIPPgAQBABQOBB54A=="
     )
   ),
+  // gargoyle (img 42)
+  h.decompress(atob("kEggmqiMRA4IDBAgoAB1QPPiNEgFExAqCxAHBmYABogRBB58zBQIBBAAIQGB6YKBBAYWCB6sz5gCC5gtBB7kzOYYPWJ4aIBSwICBB6jJCogLCBgKQDB6IECdQQCBJ4QQCB6gLCGIIHCB6hPCRIgXEB6YQCBwQsCA4YPUR4JQDLIYPSBYP/BQZVFBIIPP1SoDVQYVBu7yC1QPPgAQBAAoVDBwQPPA")),
 ];
 
 const KNIGHT = 1;
@@ -302,7 +305,7 @@ const REGENERATION = 8;
 const XP = 9;
 const MOVE_ALGORITHM = 10;
 
-const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin"];
+const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin", "Gargoyle"];
 let MONSTERS_STATS = [
   null,
   new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0]), // Player
@@ -310,6 +313,7 @@ let MONSTERS_STATS = [
   new Int16Array([6, 10, 0, 8, 10, 1, 2, 0, 100, 150, 1]), // Ant
   new Int16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 1]), // Wolf
   new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 1]), // Goblin
+  new Int16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 1]), // Gargoyle
 ];
 
 // types of item stats (on top of monster stats)
@@ -804,7 +808,7 @@ class Game {
   constructor() {
     this.monsters = [];
     this.player = new Creature(KNIGHT);
-    this.equiped = [null, null, null, null, null, null, null, null];
+    this.equiped = [null, null, null, null, null, null, null, null, null];
     this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.intro_img = require("heatshrink").decompress(
@@ -814,11 +818,12 @@ class Game {
     );
     this.time = 0;
     this.dungeon_level = 1;
-    this.display();
     this.in_menu = false;
     this.locked = false; // disable input if true
     this.message = null;
     Bangle.setLocked(false);
+    let new_game = this;
+    this.animate_interval = setInterval(() => { new_game.display() }, 1000);
   }
   rest() {
     this.msg(
@@ -856,32 +861,11 @@ class Game {
   }
   level_up() {
     let hp_increment = randint(1, 10);
-    let old_max_hp = this.player.stats[MAX_HP];
-    let old_attack = this.player.stats[ATTACK];
     this.player.stats[MAX_HP] += hp_increment;
     this.player.hp += hp_increment;
     this.player.stats[ATTACK] += 1;
     this.in_menu = true;
-    setTimeout(() => {
-      E.showPrompt(
-        "you are now level" +
-          this.player.level +
-          "\n\nstats changes:\nhp: " +
-          old_max_hp +
-          " -> " +
-          this.player.stats[MAX_HP] +
-          "\nattack: " +
-          old_attack +
-          " -> " +
-          this.player.stats[ATTACK],
-        { title: "Level Up!", buttons: { One: 1, Two: 2 } }
-      ).then(function (c) {
-        game.in_menu = false;
-        game.advance_time();
-        game.display();
-        game.show_msg();
-      });
-    }, 1000);
+    this.screen = LEVEL_UP_SCREEN;
   }
   msg(message) {
     // record message to be shown later.
@@ -911,12 +895,33 @@ class Game {
     g.clear();
     if (this.screen == INTRO_SCREEN) {
       g.drawImage(this.intro_img, 0, 0);
+      let frame = Math.floor(getTime()/4) % 6;
+      g.setFont("4x6:2").setFontAlign(0, 0, 0);
+      let name = "";
+      let contribution = "";
+      if (frame == 0) {
+        name = "Frederic Wagner";
+        contribution = "Code";
+      } else if (frame == 2) {
+        name = "Yann Wagner";
+        contribution = "Gfx";
+      } else if (frame == 4) {
+        name = "DragonDePlatino";
+        contribution = "Gfx";
+      }
+      g.setColor(0, 0, 0);
+      g.drawString(name, g.getWidth()/2, g.getHeight() * 2 / 3);
+      g.drawString(contribution, g.getWidth()/2, g.getHeight() * 4 / 5);
+      g.setColor(1, 0, 0);
+      g.drawString(name, g.getWidth()/2-1, g.getHeight() * 2 / 3-1);
+      g.drawString(contribution, g.getWidth()/2-1, g.getHeight() * 4 / 5-1);
     } else if (this.screen == DIED_SCREEN) {
       game.in_menu = true;
       E.showAlert("you died").then(() => {
         game = new Game();
       });
-      g.drawString("you dead", g.getWidth() / 2, g.getHeight() / 2);
+    } else if (this.screen == LEVEL_UP_SCREEN) {
+      g.drawString("level up !\nswipe to unlock", g.getWidth() / 2, g.getHeight() / 2);
     } else {
       this.map.display();
       this.display_stats();
@@ -1064,8 +1069,28 @@ class Game {
 g.setBgColor(0, 0, 0);
 let game = new Game();
 
+Bangle.on("swipe", () => {
+  if (game.screen == LEVEL_UP_SCREEN) {
+      E.showPrompt(
+        "you are now level" +
+          game.player.level +
+          "\n\nstats changes:\nhp: " +
+          game.player.stats[MAX_HP] +
+          "\nattack: " +
+          game.player.stats[ATTACK],
+        { title: "Level Up!", buttons: { One: 1, Two: 2 } }
+      ).then(function (c) {
+        game.screen = MAIN_SCREEN;
+        game.in_menu = false;
+        game.advance_time();
+        game.display();
+        game.show_msg();
+      });
+  }
+});
+
 Bangle.on("touch", function (button, xy) {
-  if (game.locked || game.in_menu) {
+  if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
@@ -1074,6 +1099,7 @@ Bangle.on("touch", function (button, xy) {
     return;
   }
   if (game.screen == INTRO_SCREEN) {
+    clearInterval(game.animate_interval);
     game.start();
     game.display();
     return;
