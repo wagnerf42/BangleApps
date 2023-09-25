@@ -94,7 +94,7 @@ function random_item(dungeon_level) {
   return 300 + randint(1, ITEMS.length - 1);
 }
 
-const ITEM_IMAGES = [
+const EDIBLE_IMAGES = [
   // gold (img 786)
   h.decompress(
     atob(
@@ -113,6 +113,9 @@ const ITEM_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
     )
   ),
+];
+
+const ITEM_IMAGES = [
   // dagger (img 417)
   h.decompress(
     atob(
@@ -149,12 +152,16 @@ const ITEM_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB58zJQoQGB6MAKImqCAwPSAAwPYAQPdBgICCB6xvBiNVgFVAQIPZ1QMCF5YPSF4JXBB7BPBCAPdGIQRDB6bQBFoQSBWYgPTKAQxCqoyBBQIPTAwTTCCQXdAAIICB59EQwYRCCARWCB6BsBogAENwYVC1QPPRoQAKBwIPPA="
     )
   ),
+  // small shield (img 525)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPUNAIKDAogPV7qMD1QPaAgXdiIPZmdVAAQPcFwIPbBgJNBB7YvBiOqB7YvBAASvLB5oQB1QHBBwgPWCAIACBAgPRogHEAA1EB6BJBogAKBwIPPNQYAJBwIPPA==")),
   // leather jacket (img 510)
   h.decompress(
     atob(
       "kEggmqiIAM1QPPiNEmYABFooICogRBB54ODGgmqCAYPTgERF4vdCAQPSBwNVBINVAIIFBCAQPWBIIRCB6wQBB4QxD7oCBB6gQEKIZ3BB6wADB4IOCB60RJQSUCB6yQFAYJuCB6qPDVwifKB5ZOBWAi/IB5lEKAgACSIUzogPQ1QQBAAKwEAAIIBBwIPPgAQBABQOBB54"
     )
   ),
+  // stone amulet (img 574)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYACFogHCogRBB54OE7vuAIQQDB6kA9wvECAYPTBAgVEB6gHEOQYvGB6AuEOQRvGB54wEOQY1DB6YxDOYwPVWAoPaRgQP/B7FECAwGEogPQ1QQBABQOBB58ACAIAKBwIPPA")),
 ];
 
 const MISC_IMAGES = [
@@ -272,76 +279,71 @@ const BORDER_IMAGES = [
   ),
 ];
 
-const IMAGES = [MONSTERS_IMAGES, MISC_IMAGES, BORDER_IMAGES, ITEM_IMAGES];
+const IMAGES = [
+  MONSTERS_IMAGES,
+  MISC_IMAGES,
+  BORDER_IMAGES,
+  ITEM_IMAGES,
+  EDIBLE_IMAGES,
+];
 
 // brightness 0, contrast 70
 
 // types of monster stats
 const MAX_HP = 0;
-const AC = 1;
-const ATTACK = 2;
-const SPEED = 3;
-const DMG_DICES_NUM = 4;
-const DMG_DICES = 5;
-const DMG_BONUS = 6;
-const REGENERATION = 7;
-const XP = 8;
-const MOVE_ALGORITHM = 9;
+const AC = 1; // the higher, the harder to hit
+const ARMOR = 2; // deduce this from damages
+const ATTACK = 3;
+const SPEED = 4;
+const DMG_DICES_NUM = 5;
+const DMG_DICES = 6;
+const DMG_BONUS = 7;
+const REGENERATION = 8;
+const XP = 9;
+const MOVE_ALGORITHM = 10;
 
 const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin"];
 let MONSTERS_STATS = [
   null,
-  new Int16Array([10, 10, 4, 6, 1, 4, 0, 100, 0, 0]), // Player
-  new Int16Array([4, 10, 4, 8, 1, 4, 0, 100, 100, 1]), // Newt
-  new Int16Array([6, 10, 8, 10, 1, 2, 0, 100, 150, 1]), // Ant
-  new Int16Array([10, 10, 6, 6, 1, 4, 0, 100, 400, 1]), // Wolf
-  new Int16Array([8, 10, 6, 7, 1, 6, 0, 90, 400, 1]), // Goblin
+  new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0]), // Player
+  new Int16Array([4, 10, 0, 4, 8, 1, 4, 0, 100, 100, 1]), // Newt
+  new Int16Array([6, 10, 0, 8, 10, 1, 2, 0, 100, 150, 1]), // Ant
+  new Int16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 1]), // Wolf
+  new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 1]), // Goblin
 ];
 
 // types of item stats (on top of monster stats)
-const VALUE = 8;
-const HP = 9;
-const SATIATION = 10;
-const SLOT = 11; // is the item a consumable or does it occupy an equipment slot
+const VALUE = 9;
+const HP = 10;
+const SATIATION = 11;
+const SLOT = 12; // which equipment slot does the item occupy
 
 // stats increments for each item
 const ITEMS_STATS = [
-  null, // gold
-  new Int16Array([0, 0, 0, 0, 0, 0, 0, 0, 30, 0, 200, 0]), // food
-  new Int16Array([0, 0, 0, 0, 0, 0, 0, 0, 100, 8, 10, 0]), // life potion
-  new Int16Array([0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 200, 0, 0, 3]), // leather gauntlet
-  new Int16Array([0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
-  new Int16Array([0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, 1]), // mace
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 300, 0, 0, 3]), // leather boots
-  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 500, 0, 0, 4]), // leather jacket
+  new Int16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 3]), // leather gauntlet
+  new Int16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
+  new Int16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, 1]), // mace
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, 4]), // leather boots
+  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, 5]), // small shield
+  new Int16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, 6]), // leather jacket
+  new Int16Array([0, 0, 1, 0, 0, 0, 0, 0, 0, 800, 0, 0, 7]), // stone amulet
 ];
 
 const ITEMS = [
-  "Gold",
-  "Food",
-  "Life Potion",
   "Dagger",
   "Leather helmet",
   "Leather gauntlets",
   "Sword",
   "Mace",
   "Leather boots",
+  "Small shield",
   "Leather jacket",
+  "Stone Amulet",
 ];
 
-const ITEMS_MSGS = [
-  null,
-  "Yum Yum",
-  "You heal",
-  null,
-  null,
-  null,
-  null,
-  null,
-  null,
-];
+const EDIBLES = ["Gold", "Food", "Life Potion"];
 
 class Creature {
   constructor(monster_type, position) {
@@ -382,7 +384,7 @@ class Creature {
   treasure() {
     // let's have a 40% change of dropping something
     if (Math.random() < 0.4) {
-      return 300 + randint(0, 2);
+      return 400 + randint(0, EDIBLES.length - 1);
     } else {
       return FLOOR;
     }
@@ -435,6 +437,10 @@ class Creature {
       let damages = this.stats[DMG_BONUS];
       for (let i = 0; i < this.stats[DMG_DICES_NUM]; i++) {
         damages += randint(1, this.stats[DMG_DICES]);
+      }
+      damages -= target.stats[ARMOR];
+      if (damages < 0) {
+        damages = 0;
       }
       target.hp -= damages;
       if (target.hp <= 0) {
@@ -798,7 +804,7 @@ class Game {
   constructor() {
     this.monsters = [];
     this.player = new Creature(KNIGHT);
-    this.equiped = [null, null, null, null, null, null];
+    this.equiped = [null, null, null, null, null, null, null, null];
     this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.intro_img = require("heatshrink").decompress(
@@ -969,34 +975,37 @@ class Game {
         x: this.player.position.x,
         y: this.player.position.y,
       };
-      if (destination_content >= 300) {
-        // pick item
-        let item = destination_content - 300;
-        if (item == 0) {
+      if (destination_content >= 400) {
+        // edible
+        if (destination_content == 400) {
           // gold
           let amount = randint(1, 10); //TODO level based amount
           this.player.gold += amount;
           this.msg("" + amount + " gold");
-        } else {
-          this.player.satiation += ITEMS_STATS[item][SATIATION];
+        } else if (destination_content == 401) {
+          this.player.satiation += 200;
           this.player.satiation = Math.min(400, this.player.satiation);
-          this.player.hp += ITEMS_STATS[item][HP];
+          this.msg("Yum Yum");
+        } else if (destination_content == 402) {
+          let old_hp = this.player.hp;
+          this.player.hp += randint(1, 8);
           this.player.hp = Math.min(this.player.stats[MAX_HP], this.player.hp);
-          if (ITEMS_MSGS[item] !== null) {
-            this.msg(ITEMS_MSGS[item]);
-          }
-          let slot = ITEMS_STATS[item][SLOT];
-          if (slot != 0) {
-            this.dropping = this.equiped[slot];
-            if (this.dropping !== null) {
-              this.player.item_effect(this.dropping, false);
-              this.msg("Dropping " + ITEMS[this.dropping]);
-            }
-            this.equiped[slot] = item;
-            this.msg(ITEMS[item] + " equiped");
-          }
-          this.player.item_effect(item, true);
+          this.msg("Healed " + (this.player.hp - old_hp));
         }
+      } else if (destination_content >= 300) {
+        // pick item
+        let item = destination_content - 300;
+        let slot = ITEMS_STATS[item][SLOT];
+        if (slot != 0) {
+          this.dropping = this.equiped[slot];
+          if (this.dropping !== null) {
+            this.player.item_effect(this.dropping, false);
+            this.msg("Dropping " + ITEMS[this.dropping]);
+          }
+          this.equiped[slot] = item;
+          this.msg(ITEMS[item] + " equiped");
+        }
+        this.player.item_effect(item, true);
       }
       this.map.move(game.player, destination);
       if (this.map.secret != null) {
