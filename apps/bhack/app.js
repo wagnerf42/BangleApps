@@ -13,6 +13,8 @@ const DIED_SCREEN = 2;
 const LEVEL_UP_SCREEN = 3;
 const SHEET_SCREEN = 4;
 
+const TALENTS = ["Aggressive", "Careful", "Strong"];
+
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
 }
@@ -86,9 +88,17 @@ const MONSTERS_IMAGES = [
     )
   ),
   // gargoyle (img 42)
-  h.decompress(atob("kEggmqiMRA4IDBAgoAB1QPPiNEgFExAqCxAHBmYABogRBB58zBQIBBAAIQGB6YKBBAYWCB6sz5gCC5gtBB7kzOYYPWJ4aIBSwICBB6jJCogLCBgKQDB6IECdQQCBJ4QQCB6gLCGIIHCB6hPCRIgXEB6YQCBwQsCA4YPUR4JQDLIYPSBYP/BQZVFBIIPP1SoDVQYVBu7yC1QPPgAQBAAoVDBwQPPA")),
+  h.decompress(
+    atob(
+      "kEggmqiMRA4IDBAgoAB1QPPiNEgFExAqCxAHBmYABogRBB58zBQIBBAAIQGB6YKBBAYWCB6sz5gCC5gtBB7kzOYYPWJ4aIBSwICBB6jJCogLCBgKQDB6IECdQQCBJ4QQCB6gLCGIIHCB6hPCRIgXEB6YQCBwQsCA4YPUR4JQDLIYPSBYP/BQZVFBIIPP1SoDVQYVBu7yC1QPPgAQBAAoVDBwQPPA"
+    )
+  ),
   // spider (img 95)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54GDgAQIB6ZnBAQQADB6sAogPCKoP/JgIQCB6IMCBwoMCBIIPWBwYuBGAQPSAoJqEAYIICB6QIDFYSTDG4QPTNQaTDB63Mu4OB/4PbJ4V3J4iPEB6CKCCQL1Ff4gPOFgIAB5gUDAYR2BB6GqCAIAKBwIPPgAQBABQOBB54")),
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54GDgAQIB6ZnBAQQADB6sAogPCKoP/JgIQCB6IMCBwoMCBIIPWBwYuBGAQPSAoJqEAYIICB6QIDFYSTDG4QPTNQaTDB63Mu4OB/4PbJ4V3J4iPEB6CKCCQL1Ff4gPOFgIAB5gUDAYR2BB6GqCAIAKBwIPPgAQBABQOBB54"
+    )
+  ),
 ];
 
 const KNIGHT = 1;
@@ -159,7 +169,11 @@ const ITEM_IMAGES = [
     )
   ),
   // small shield (img 525)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPUNAIKDAogPV7qMD1QPaAgXdiIPZmdVAAQPcFwIPbBgJNBB7YvBiOqB7YvBAASvLB5oQB1QHBBwgPWCAIACBAgPRogHEAA1EB6BJBogAKBwIPPNQYAJBwIPPA==")),
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPUNAIKDAogPV7qMD1QPaAgXdiIPZmdVAAQPcFwIPbBgJNBB7YvBiOqB7YvBAASvLB5oQB1QHBBwgPWCAIACBAgPRogHEAA1EB6BJBogAKBwIPPNQYAJBwIPPA=="
+    )
+  ),
   // leather jacket (img 510)
   h.decompress(
     atob(
@@ -167,7 +181,11 @@ const ITEM_IMAGES = [
     )
   ),
   // stone amulet (img 574)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYACFogHCogRBB54OE7vuAIQQDB6kA9wvECAYPTBAgVEB6gHEOQYvGB6AuEOQRvGB54wEOQY1DB6YxDOYwPVWAoPaRgQP/B7FECAwGEogPQ1QQBABQOBB58ACAIAKBwIPPA")),
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYACFogHCogRBB54OE7vuAIQQDB6kA9wvECAYPTBAgVEB6gHEOQYvGB6AuEOQRvGB54wEOQY1DB6YxDOYwPVWAoPaRgQP/B7FECAwGEogPQ1QQBABQOBB58ACAIAKBwIPPA"
+    )
+  ),
 ];
 
 const MISC_IMAGES = [
@@ -361,6 +379,7 @@ class Creature {
       this.level = 1;
       this.satiation = 400;
       this.stats = Int16Array(MONSTERS_STATS[monster_type]);
+      this.talents = [];
     } else {
       this.stats = MONSTERS_STATS[monster_type];
     }
@@ -821,7 +840,6 @@ class Game {
     this.monsters = [];
     this.player = new Creature(KNIGHT);
     this.equiped = [null, null, null, null, null, null, null, null, null];
-    this.dropping = null; // item which is dropped under us will but visible only after we move
     this.screen = INTRO_SCREEN;
     this.intro_img = require("heatshrink").decompress(
       atob(
@@ -835,7 +853,9 @@ class Game {
     this.message = null;
     Bangle.setLocked(false);
     let new_game = this;
-    this.animate_interval = setInterval(() => { new_game.display() }, 1000);
+    this.animate_interval = setInterval(() => {
+      new_game.display();
+    }, 1000);
   }
   rest() {
     this.msg(
@@ -907,7 +927,7 @@ class Game {
     g.clear();
     if (this.screen == INTRO_SCREEN) {
       g.drawImage(this.intro_img, 0, 0);
-      let frame = Math.floor(getTime()/4) % 6;
+      let frame = Math.floor(getTime() / 4) % 6;
       g.setFont("4x6:2").setFontAlign(0, 0, 0);
       let name = "";
       let contribution = "";
@@ -922,18 +942,26 @@ class Game {
         contribution = "Gfx";
       }
       g.setColor(0, 0, 0);
-      g.drawString(name, g.getWidth()/2, g.getHeight() * 2 / 3);
-      g.drawString(contribution, g.getWidth()/2, g.getHeight() * 4 / 5);
+      g.drawString(name, g.getWidth() / 2, (g.getHeight() * 2) / 3);
+      g.drawString(contribution, g.getWidth() / 2, (g.getHeight() * 4) / 5);
       g.setColor(1, 0, 0);
-      g.drawString(name, g.getWidth()/2-1, g.getHeight() * 2 / 3-1);
-      g.drawString(contribution, g.getWidth()/2-1, g.getHeight() * 4 / 5-1);
+      g.drawString(name, g.getWidth() / 2 - 1, (g.getHeight() * 2) / 3 - 1);
+      g.drawString(
+        contribution,
+        g.getWidth() / 2 - 1,
+        (g.getHeight() * 4) / 5 - 1
+      );
     } else if (this.screen == DIED_SCREEN) {
       game.in_menu = true;
       E.showAlert("you died").then(() => {
         game = new Game();
       });
     } else if (this.screen == LEVEL_UP_SCREEN) {
-      g.drawString("level up !\nswipe to unlock", g.getWidth() / 2, g.getHeight() / 2);
+      g.drawString(
+        "level up !\nswipe to unlock",
+        g.getWidth() / 2,
+        g.getHeight() / 2
+      );
     } else {
       this.map.display();
       this.display_stats();
@@ -992,6 +1020,7 @@ class Game {
         x: this.player.position.x,
         y: this.player.position.y,
       };
+      let dropping = null;
       if (destination_content >= 400) {
         // edible
         if (destination_content == 400) {
@@ -1014,10 +1043,10 @@ class Game {
         let item = destination_content - 300;
         let slot = ITEMS_STATS[item][SLOT];
         if (slot != 0) {
-          this.dropping = this.equiped[slot];
-          if (this.dropping !== null) {
-            this.player.item_effect(this.dropping, false);
-            this.msg("Dropping " + ITEMS[this.dropping]);
+          dropping = this.equiped[slot];
+          if (dropping !== null) {
+            this.player.item_effect(dropping, false);
+            this.msg("Dropping " + ITEMS[dropping]);
           }
           this.equiped[slot] = item;
           this.msg(ITEMS[item] + " equiped");
@@ -1034,9 +1063,8 @@ class Game {
           }
         }
       }
-      if (this.dropping !== null) {
-        this.map.set_cell(start_position, 300 + this.dropping);
-        this.dropping = null;
+      if (dropping !== null) {
+        this.map.set_cell(start_position, 300 + dropping);
       }
     }
     if (!this.in_menu) {
@@ -1058,13 +1086,13 @@ class Game {
       }
       if (this.time % 20 == 0) {
         if (this.player.poisoned > 0) {
-            let dmg = Math.ceil(player.poisoned);
-            player.hp -= dmg;
-            player.poisoned -= 0.2 * dmg;
-            this.msg("Poison hits ("+dmg+")")
-            if (player.hp <= 0) {
-              player.dies();
-            }
+          let dmg = Math.ceil(player.poisoned);
+          player.hp -= dmg;
+          player.poisoned -= 0.2 * dmg;
+          this.msg("Poison hits (" + dmg + ")");
+          if (player.hp <= 0) {
+            player.dies();
+          }
         }
       }
       this.monsters.forEach((monster) => {
@@ -1074,12 +1102,13 @@ class Game {
         if (this.time % monster.stats[REGENERATION] == 0) {
           monster.hp = Math.min(monster.hp + 1, monster.stats[MAX_HP]);
         }
-        if (this.time % 20 == 0) { // every 20 turns inflict poison dmg
+        if (this.time % 20 == 0) {
+          // every 20 turns inflict poison dmg
           if (monster.poisoned > 0) {
             let dmg = Math.ceil(monster.poisoned);
-            monster.hp -= 2*dmg;
+            monster.hp -= 2 * dmg;
             monster.poisoned -= 0.2 * dmg;
-            this.msg("Poison hit "+monster.name()+" ("+dmg+")")
+            this.msg("Poison hit " + monster.name() + " (" + dmg + ")");
             if (monster.hp <= 0) {
               monster.dies();
             }
@@ -1103,50 +1132,103 @@ class Game {
 g.setBgColor(0, 0, 0);
 let game = new Game();
 
+function add_talent(talent) {
+  E.showMenu();
+  game.player.talents.push(talent);
+  if (talent == "Aggressive") {
+    game.player.stats[ATTACK] += 2;
+  } else if (talent == "Strong") {
+    game.player.stats[DMG_BONUS] += 1;
+  } else if (talent == "Careful") {
+    game.player.stats[DV] += 1;
+  } else {
+    console.log("TODO: talent:", talent);
+  }
+
+  //TODO: factorize
+  game.screen = MAIN_SCREEN;
+  game.in_menu = false;
+  game.advance_time();
+  game.display();
+  game.show_msg();
+}
+
 Bangle.on("swipe", () => {
   if (game.screen == LEVEL_UP_SCREEN) {
-      E.showPrompt(
-        "you are now level" +
-          game.player.level +
-          "\n\nstats changes:\nhp: " +
-          game.player.stats[MAX_HP] +
-          "\nattack: " +
-          game.player.stats[ATTACK],
-        { title: "Level Up!", buttons: { One: 1, Two: 2 } }
-      ).then(function (c) {
+    E.showPrompt(
+      "you are now level" +
+        game.player.level +
+        "\n\nstats changes:\nhp: " +
+        game.player.stats[MAX_HP] +
+        "\nattack: " +
+        game.player.stats[ATTACK],
+      { title: "Level Up!", buttons: {Ok: 0} }
+    ).then(() => {
+      if (
+        game.player.level % 2 == 0 &&
+        TALENTS.length / 3 >= game.player.level / 2
+      ) {
+        let talent_num = game.player.level / 2 - 1;
+        let menu = [
+          {
+            title: TALENTS[talent_num * 3],
+            onchange: add_talent.bind(null, TALENTS[talent_num * 3]),
+          },
+          {
+            title: TALENTS[talent_num * 3 + 1],
+            onchange: add_talent.bind(null, TALENTS[talent_num * 3 + 1]),
+          },
+          {
+            title: TALENTS[talent_num * 3 + 2],
+            onchange: add_talent.bind(null, TALENTS[talent_num * 3 + 2]),
+          },
+        ];
+        menu[""] = { title: "Choose a talent" };
+        E.showMenu(menu);
+      } else {
         game.screen = MAIN_SCREEN;
         game.in_menu = false;
         game.advance_time();
         game.display();
         game.show_msg();
-      });
+      }
+    });
   }
 });
 
 // button click displays character sheet
-setWatch(() => {
+setWatch(
+  () => {
+    if (game.screen == MAIN_SCREEN) {
+      game.screen = SHEET_SCREEN;
 
-  if (game.screen == MAIN_SCREEN) {
-    game.screen = SHEET_SCREEN;
-    
-    let s = game.player.stats;
-    let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
-    msg += "dv: " + s[DV] + "\n";
-    msg += "pv: " + s[PV] + "\n";
-    msg += "attack: " + s[ATTACK] + "\n";
-    msg += "speed: " + s[SPEED] + "\n";
-    msg += "dmg: " + s[DMG_DICES_NUM] + "D" + s[DMG_DICES] + " + " + s[DMG_BONUS] + "\n";
-    msg += "regen:" + s[REGENERATION] + "\n";
-    msg += "xp:" + s[XP] + "\n";
-    
-    E.showMessage(msg); 
-  } else if (game.screen == SHEET_SCREEN) {
-    game.screen = MAIN_SCREEN;
-    game.display();
-    game.show_msg();
-  }
-  
-}, BTN1, {repeat: true});
+      let s = game.player.stats;
+      let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
+      msg += "dv: " + s[DV] + "\n";
+      msg += "pv: " + s[PV] + "\n";
+      msg += "attack: " + s[ATTACK] + "\n";
+      msg += "speed: " + s[SPEED] + "\n";
+      msg +=
+        "dmg: " +
+        s[DMG_DICES_NUM] +
+        "D" +
+        s[DMG_DICES] +
+        " + " +
+        s[DMG_BONUS] +
+        "\n";
+      msg += "regen:" + s[REGENERATION] + "\n";
+      msg += "xp:" + s[XP] + "\n";
+
+      E.showMessage(msg);
+    } else if (game.screen == SHEET_SCREEN) {
+      game.screen = MAIN_SCREEN;
+      game.display();
+      game.show_msg();
+    }
+  },
+  BTN1,
+  { repeat: true }
+);
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {

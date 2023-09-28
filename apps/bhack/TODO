@@ -31,7 +31,7 @@ pb:
 - monstres
 
 talents:
-- aggressive (+1 attack)
+- aggressive (+2 attack)
 - careful (+1 ac)
 - strong (+1 damage)
 
