@@ -87,6 +87,8 @@ const MONSTERS_IMAGES = [
   ),
   // gargoyle (img 42)
   h.decompress(atob("kEggmqiMRA4IDBAgoAB1QPPiNEgFExAqCxAHBmYABogRBB58zBQIBBAAIQGB6YKBBAYWCB6sz5gCC5gtBB7kzOYYPWJ4aIBSwICBB6jJCogLCBgKQDB6IECdQQCBJ4QQCB6gLCGIIHCB6hPCRIgXEB6YQCBwQsCA4YPUR4JQDLIYPSBYP/BQZVFBIIPP1SoDVQYVBu7yC1QPPgAQBAAoVDBwQPPA")),
+  // spider (img 95)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54GDgAQIB6ZnBAQQADB6sAogPCKoP/JgIQCB6IMCBwoMCBIIPWBwYuBGAQPSAoJqEAYIICB6QIDFYSTDG4QPTNQaTDB63Mu4OB/4PbJ4V3J4iPEB6CKCCQL1Ff4gPOFgIAB5gUDAYR2BB6GqCAIAKBwIPPgAQBABQOBB54")),
 ];
 
 const KNIGHT = 1;
@@ -304,17 +306,19 @@ const DMG_DICES = 6;
 const DMG_BONUS = 7;
 const REGENERATION = 8;
 const XP = 9;
-const MOVE_ALGORITHM = 10;
+const POISON = 10; // five damages for every point
+const MOVE_ALGORITHM = 11;
 
 const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin", "Gargoyle"];
 let MONSTERS_STATS = [
   null,
-  new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0]), // Player
-  new Int16Array([4, 10, 0, 4, 8, 1, 4, 0, 100, 100, 1]), // Newt
-  new Int16Array([6, 10, 0, 8, 10, 1, 2, 0, 100, 150, 1]), // Ant
-  new Int16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 1]), // Wolf
-  new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 1]), // Goblin
-  new Int16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 1]), // Gargoyle
+  new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0, 0]), // Player
+  new Int16Array([4, 10, 0, 4, 8, 1, 4, 0, 100, 100, 0, 1]), // Newt
+  new Int16Array([6, 10, 0, 8, 10, 1, 2, 0, 100, 150, 0, 1]), // Ant
+  new Int16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 0, 1]), // Wolf
+  new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 0, 1]), // Goblin
+  new Int16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 0, 1]), // Gargoyle
+  new Int16Array([8, 10, 0, 6, 6, 1, 4, 0, 100, 700, 1, 1]), // Spider
 ];
 
 // types of item stats (on top of monster stats)
@@ -363,6 +367,7 @@ class Creature {
     this.hp = this.stats[MAX_HP];
     this.position = position;
     this.monster_type = monster_type;
+    this.poisoned = 0;
   }
   add_xp(xp) {
     let next_level_threshold = 1 << (9 + this.level);
@@ -436,6 +441,17 @@ class Creature {
       return;
     }
   }
+  dies() {
+    game.monsters = game.monsters.filter((m) => m.hp > 0);
+    if (this.monster_type == KNIGHT) {
+      game.map.set_cell(this.position, TOMBSTONE);
+      game.msg("You die");
+    } else {
+      game.map.set_cell(this.position, this.treasure());
+      game.msg(this.name() + " dies");
+      game.player.add_xp(this.stats[XP]);
+    }
+  }
   attack(target) {
     if (randint(1, 20) + this.stats[ATTACK] >= target.stats[DV]) {
       // attack success
@@ -448,17 +464,12 @@ class Creature {
         damages = 0;
       }
       target.hp -= damages;
+      if (damages > 0) {
+        target.poisoned = this.stats[POISON];
+      }
       if (target.hp <= 0) {
         // we kill it
-        game.monsters = game.monsters.filter((m) => m.hp > 0);
-        if (target.monster_type == KNIGHT) {
-          game.map.set_cell(target.position, TOMBSTONE);
-          game.msg("You die");
-        } else {
-          game.map.set_cell(target.position, target.treasure());
-          game.msg(target.name() + " dies");
-          this.add_xp(target.stats[XP]);
-        }
+        target.dies();
       } else {
         if (target.monster_type == KNIGHT) {
           game.msg("you are hit(" + damages + ")");
@@ -1045,12 +1056,34 @@ class Game {
           this.player.stats[MAX_HP]
         );
       }
+      if (this.time % 20 == 0) {
+        if (this.player.poisoned > 0) {
+            let dmg = Math.ceil(player.poisoned);
+            player.hp -= dmg;
+            player.poisoned -= 0.2 * dmg;
+            this.msg("Poison hits ("+dmg+")")
+            if (player.hp <= 0) {
+              player.dies();
+            }
+        }
+      }
       this.monsters.forEach((monster) => {
         if (this.time % monster.stats[SPEED] == 0) {
           monster.move();
         }
         if (this.time % monster.stats[REGENERATION] == 0) {
           monster.hp = Math.min(monster.hp + 1, monster.stats[MAX_HP]);
+        }
+        if (this.time % 20 == 0) { // every 20 turns inflict poison dmg
+          if (monster.poisoned > 0) {
+            let dmg = Math.ceil(monster.poisoned);
+            monster.hp -= 2*dmg;
+            monster.poisoned -= 0.2 * dmg;
+            this.msg("Poison hit "+monster.name()+" ("+dmg+")")
+            if (monster.hp <= 0) {
+              monster.dies();
+            }
+          }
         }
       });
       if (this.time % 300 == 0) {
