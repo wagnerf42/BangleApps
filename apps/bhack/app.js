@@ -11,6 +11,7 @@ const INTRO_SCREEN = 0;
 const MAIN_SCREEN = 1;
 const DIED_SCREEN = 2;
 const LEVEL_UP_SCREEN = 3;
+const SHEET_SCREEN = 4;
 
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
@@ -294,8 +295,8 @@ const IMAGES = [
 
 // types of monster stats
 const MAX_HP = 0;
-const AC = 1; // the higher, the harder to hit
-const ARMOR = 2; // deduce this from damages
+const DV = 1; // the higher, the harder to hit
+const PV = 2; // deduce this from damages
 const ATTACK = 3;
 const SPEED = 4;
 const DMG_DICES_NUM = 5;
@@ -436,13 +437,13 @@ class Creature {
     }
   }
   attack(target) {
-    if (randint(1, 20) + this.stats[ATTACK] >= target.stats[AC]) {
+    if (randint(1, 20) + this.stats[ATTACK] >= target.stats[DV]) {
       // attack success
       let damages = this.stats[DMG_BONUS];
       for (let i = 0; i < this.stats[DMG_DICES_NUM]; i++) {
         damages += randint(1, this.stats[DMG_DICES]);
       }
-      damages -= target.stats[ARMOR];
+      damages -= target.stats[PV];
       if (damages < 0) {
         damages = 0;
       }
@@ -1088,6 +1089,31 @@ Bangle.on("swipe", () => {
       });
   }
 });
+
+// button click displays character sheet
+setWatch(() => {
+
+  if (game.screen == MAIN_SCREEN) {
+    game.screen = SHEET_SCREEN;
+    
+    let s = game.player.stats;
+    let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
+    msg += "dv: " + s[DV] + "\n";
+    msg += "pv: " + s[PV] + "\n";
+    msg += "attack: " + s[ATTACK] + "\n";
+    msg += "speed: " + s[SPEED] + "\n";
+    msg += "dmg: " + s[DMG_DICES_NUM] + "D" + s[DMG_DICES] + " + " + s[DMG_BONUS] + "\n";
+    msg += "regen:" + s[REGENERATION] + "\n";
+    msg += "xp:" + s[XP] + "\n";
+    
+    E.showMessage(msg); 
+  } else if (game.screen == SHEET_SCREEN) {
+    game.screen = MAIN_SCREEN;
+    game.display();
+    game.show_msg();
+  }
+  
+}, BTN1, {repeat: true});
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {
