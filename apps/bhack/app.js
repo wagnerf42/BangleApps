@@ -323,7 +323,7 @@ const XP = 9;
 const POISON = 10; // five damages for every point
 const MOVE_ALGORITHM = 11;
 
-const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin", "Gargoyle"];
+const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin", "Gargoyle", "Spider"];
 let MONSTERS_STATS = [
   null,
   new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0, 0]), // Player
@@ -332,7 +332,7 @@ let MONSTERS_STATS = [
   new Int16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 0, 1]), // Wolf
   new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 0, 1]), // Goblin
   new Int16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 0, 1]), // Gargoyle
-  new Int16Array([8, 10, 0, 6, 6, 1, 4, 0, 100, 700, 1, 1]), // Spider
+  new Int16Array([12, 10, 0, 6, 6, 1, 4, 0, 100, 700, 1, 1]), // Spider
 ];
 
 // types of item stats (on top of monster stats)
@@ -1113,12 +1113,12 @@ class Game {
       }
       if (this.time % 20 == 0) {
         if (this.player.poisoned > 0) {
-          let dmg = Math.ceil(player.poisoned);
-          player.hp -= dmg;
-          player.poisoned -= 0.2 * dmg;
+          let dmg = Math.ceil(this.player.poisoned);
+          this.player.hp -= dmg;
+          this.player.poisoned -= 0.2 * dmg;
           this.msg("Poison hits (" + dmg + ")");
-          if (player.hp <= 0) {
-            player.dies();
+          if (this.player.hp <= 0) {
+            this.player.dies();
           }
         }
       }
