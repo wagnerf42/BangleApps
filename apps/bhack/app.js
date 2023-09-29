@@ -99,6 +99,12 @@ const MONSTERS_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB54GDgAQIB6ZnBAQQADB6sAogPCKoP/JgIQCB6IMCBwoMCBIIPWBwYuBGAQPSAoJqEAYIICB6QIDFYSTDG4QPTNQaTDB63Mu4OB/4PbJ4V3J4iPEB6CKCCQL1Ff4gPOFgIAB5gUDAYR2BB6GqCAIAKBwIPPgAQBABQOBB54"
     )
   ),
+  // orc (img 73)
+  h.decompress(
+    atob(
+      "kEggmqiIADBgYIE1QPPiNEmYABgEz/8zokRBAQEBB6AOGBYQGBAIIPV/4GBAQRSB/5UCB6YrBKoIODBIIPVBwJoCB7AIDOIKxCB6sAqsA9wGB9wKBB64AFiPdOwQPSAoIlCqvdqo1BCogPSEoN3913u9m1QZEB6BPCFQIvC1QFBL44PNOA3d7rRCeoIPQEYIRBAYQPBCYQIBB6GqEoQACogWDNwWqB58ACAIAFCwgOBB54A="
+    )
+  ),
 ];
 
 const KNIGHT = 1;
@@ -128,10 +134,10 @@ const EDIBLE_IMAGES = [
 ];
 
 const ITEM_IMAGES = [
-  // dagger (img 417)
+  // dagger (img 411)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP0RAIVIB6v/9wQHB6szCBAPUCBQPVCBIPWCAYCBB7QQBqvdCAYPYCAwPZeoQPUogQIAAVEB6GqCAIAKBwIPPgAQBABQOBB54A=="
+      "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"
     )
   ),
   // leather helmet (img 465)
@@ -146,16 +152,22 @@ const ITEM_IMAGES = [
       "kEggmqiIAM1QPPiNEmYADFYIGEogRBB54OFmfdJwQICB6/dqoSDB6gnDB4IRDB6hKEBgQtCAQQPSBYURBwQRDB6oOC1VVGAwPTBQNV7vd1QwDHIQPRBgIQCAgazDB6YMCAAJSBBwYPTNoIJBCIRxCfAQPRdYIDBGQYOEB6VECAIyCqr3CAAVEB6GqCAIABCIIABAwQABBwIPPgAQBABQOBB54A=="
     )
   ),
-  // sword (img 411)
+  // sword (img 423)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"
+      "kEggmqiIAM1QPPiNEmYAKogRBB58zGIQQJB6UAxH/CBIPTmYQKB6QQMB6YQLB6gQCiIQCd4IPXCAtVB7IQE7oPaCAYvLB58ABANV1QwCB7AACGAYPRohQGCYlEB6GqCAIAKBwIPPgAQBABQOBB54"
     )
   ),
   // mace (img 450)
   h.decompress(
     atob(
       "kEggmqiIAM1QPPiNEmYAGgADCogRBB54MHJwQFCB64KBogODB7AOBAYP/H5YPNJgoFCB6wKBS4ZSCB7AQBOIYPXgFVJYSvKB50A7oqCd4YPVFoTVGB6hqCBw4PTBxYPSUoIOKogPQ1QQBABQOBB58ACAIAKBwIPP"
+    )
+  ),
+  // elven dagger (img 412)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54LIgAEDB7YQDB7MAiIPcBwNEB7YOC1QPYdIQOGB6otIB7AOHB6sAu5RCB7MAswMCB7YLGB6tEBhIABogPQ1QQBABQOBB58ACAIAKBwIPP"
     )
   ),
   // leather boots (img 541)
@@ -323,7 +335,17 @@ const XP = 9;
 const POISON = 10; // five damages for every point
 const MOVE_ALGORITHM = 11;
 
-const MONSTERS = [null, "Player", "Newt", "Ant", "Wolf", "Goblin", "Gargoyle", "Spider"];
+const MONSTERS = [
+  null,
+  "Player",
+  "Newt",
+  "Ant",
+  "Wolf",
+  "Goblin",
+  "Gargoyle",
+  "Spider",
+  "Orc",
+];
 let MONSTERS_STATS = [
   null,
   new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0, 0]), // Player
@@ -333,6 +355,7 @@ let MONSTERS_STATS = [
   new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 0, 1]), // Goblin
   new Int16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 0, 1]), // Gargoyle
   new Int16Array([12, 10, 0, 6, 6, 1, 4, 0, 100, 700, 1, 1]), // Spider
+  new Int16Array([20, 12, 1, 12, 6, 1, 8, 0, 100, 800, 0, 1]), // Orc
 ];
 
 // types of item stats (on top of monster stats)
@@ -348,6 +371,7 @@ const ITEMS_STATS = [
   new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 3]), // leather gauntlet
   new Int16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
   new Int16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, 1]), // mace
+  new Int16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, 1]), // elven dagger
   new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, 4]), // leather boots
   new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, 5]), // small shield
   new Int16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, 6]), // leather jacket
@@ -360,6 +384,7 @@ const ITEMS = [
   "Leather gauntlets",
   "Sword",
   "Mace",
+  "Elven Dagger",
   "Leather boots",
   "Small shield",
   "Leather jacket",
@@ -577,13 +602,11 @@ class Map {
     this.generate_monsters(rooms, game.monsters);
 
     // now generate some loot
-    let loot_position = rooms[randint(0, rooms.length - 1)].random_free_position(this);
-    let loot = new Item(randint(0, ITEMS.length-1), loot_position);
+    let loot_position =
+      rooms[randint(0, rooms.length - 1)].random_free_position(this);
+    let loot = new Item(randint(0, ITEMS.length - 1), loot_position);
     game.items.push(loot);
-    this.set_cell(
-      loot_position,
-      loot.tile()
-    );
+    this.set_cell(loot_position, loot.tile());
 
     this.rooms = rooms;
     this.hidden_room = this.find_hidden_room();
@@ -898,7 +921,7 @@ class Game {
     let r = this.map.hidden_room;
     this.map.fill_room(r);
     let item_position = r.random_free_position(this.map);
-    let new_item = new Item(randint(0, ITEMS.length-1), item_position);
+    let new_item = new Item(randint(0, ITEMS.length - 1), item_position);
     game.items.push(new_item);
     this.map.set_cell(item_position, new_item.tile());
     r.on_border((pos) => {
@@ -1064,7 +1087,9 @@ class Game {
         }
       } else if (destination_content >= 300) {
         // pick item
-        let item_index = this.items.findIndex((i) => i.position.x == destination.x && i.position.y == destination.y);
+        let item_index = this.items.findIndex(
+          (i) => i.position.x == destination.x && i.position.y == destination.y
+        );
         let item = this.items[item_index];
         this.items.splice(item_index, item_index);
         let slot = item.stat(SLOT);
@@ -1189,7 +1214,7 @@ Bangle.on("swipe", () => {
         game.player.stats[MAX_HP] +
         "\nattack: " +
         game.player.stats[ATTACK],
-      { title: "Level Up!", buttons: {Ok: 0} }
+      { title: "Level Up!", buttons: { Ok: 0 } }
     ).then(() => {
       if (
         game.player.level % 2 == 0 &&
