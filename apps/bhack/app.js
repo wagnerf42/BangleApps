@@ -349,8 +349,8 @@ const MONSTERS = [
 let MONSTERS_STATS = [
   null,
   new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0, 0]), // Player
-  new Int16Array([4, 10, 0, 4, 8, 1, 4, 0, 100, 100, 0, 1]), // Newt
-  new Int16Array([6, 10, 0, 8, 10, 1, 2, 0, 100, 150, 0, 1]), // Ant
+  new Int16Array([4, 10, 0, 4, 8, 1, 2, 0, 100, 100, 0, 1]), // Newt
+  new Int16Array([6, 10, 0, 8, 10, 1, 3, 0, 100, 150, 0, 1]), // Ant
   new Int16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 0, 1]), // Wolf
   new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 0, 1]), // Goblin
   new Int16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 0, 1]), // Gargoyle
@@ -484,7 +484,7 @@ class Creature {
     game.monsters = game.monsters.filter((m) => m.hp > 0);
     if (this.monster_type == KNIGHT) {
       game.map.set_cell(this.position, TOMBSTONE);
-      game.msg("You die");
+      game.msg("You die", "#ff0000");
     } else {
       game.map.set_cell(this.position, this.treasure());
       game.msg(this.name() + " dies");
@@ -511,9 +511,9 @@ class Creature {
         target.dies();
       } else {
         if (target.monster_type == KNIGHT) {
-          game.msg("you are hit(" + damages + ")");
+          game.msg("you are hit(" + damages + ")", "#ff0000");
         } else {
-          game.msg(target.name() + " hit(" + damages + ")");
+          game.msg(target.name() + " hit(" + damages + ")", "#00ff00");
         }
       }
     } else {
@@ -617,11 +617,8 @@ class Map {
   }
 
   compute_allowed_monsters() {
-    let min_xp = 0;
-    if (this.level >= 4) {
-      min_xp = 100 * Math.pow(2, this.level - 4);
-    }
-    let max_xp = 100 * Math.pow(2, this.level - 1);
+    let min_xp = 100 * Math.pow(2, this.level - 5);
+    let max_xp = 100 * Math.pow(2, this.level - 2);
     let min_index = 2;
     let max_index = 2;
     let prec_xp = 0;
@@ -893,7 +890,7 @@ class Game {
     this.dungeon_level = 1;
     this.in_menu = false;
     this.locked = false; // disable input if true
-    this.message = null;
+    this.messages = [];
     Bangle.setLocked(false);
     let new_game = this;
     this.animate_interval = setInterval(() => {
@@ -934,7 +931,7 @@ class Game {
       Math.max(0, r.y - 2),
       Math.min(this.map.height, r.y + r.height + 2)
     );
-    this.msg("Secret found");
+    this.msg("Secret found", "#00ff00");
     this.map.secret = null;
   }
   level_up() {
@@ -945,24 +942,41 @@ class Game {
     this.in_menu = true;
     this.screen = LEVEL_UP_SCREEN;
   }
-  msg(message) {
+  msg(message, color) {
     // record message to be shown later.
-    if (this.message === null) {
-      this.message = message;
-    } else {
-      this.message += ". " + message;
+    if (color === undefined) {
+      color = "#ffffff";
     }
+    this.messages.push({msg: message, color: color});
   }
   show_msg() {
+    
     g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
-    if (this.message === null) {
+    let msg = this.messages.shift();
+    if (msg !== undefined) {
+      g.setColor(msg.color)
+        .setFont("4x6:2")
+        .setFontAlign(-1, 1, 0)
+        .drawString(msg.msg, 0, g.getHeight());
+    }
+    if (this.messages.length == 0) {
+      game.locked = false;
       return;
     }
-    g.setColor(1, 1, 1)
-      .setFont("4x6:2")
-      .setFontAlign(-1, 1, 0)
-      .drawString(this.message, 0, g.getHeight());
-    this.message = null;
+    
+    let msg_interval = setInterval((messages) => {
+      let msg = messages.shift();
+      if (msg === undefined) {
+        clearInterval(msg_interval);
+        game.locked = false;
+      } else {
+      g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
+      g.setColor(msg.color)
+        .setFont("4x6:2")
+        .setFontAlign(-1, 1, 0)
+        .drawString(msg.msg, 0, g.getHeight());
+      }
+    }, 400, this.messages);
   }
   start() {
     this.map = new Map(30, 30, this);
@@ -1141,7 +1155,7 @@ class Game {
           let dmg = Math.ceil(this.player.poisoned);
           this.player.hp -= dmg;
           this.player.poisoned -= 0.2 * dmg;
-          this.msg("Poison hits (" + dmg + ")");
+          this.msg("Poison hits (" + dmg + ")", "#ff0000");
           if (this.player.hp <= 0) {
             this.player.dies();
           }
@@ -1160,7 +1174,7 @@ class Game {
             let dmg = Math.ceil(monster.poisoned);
             monster.hp -= 2 * dmg;
             monster.poisoned -= 0.2 * dmg;
-            this.msg("Poison hit " + monster.name() + " (" + dmg + ")");
+            this.msg("Poison hit " + monster.name() + " (" + dmg + ")", "#ff0000");
             if (monster.hp <= 0) {
               monster.dies();
             }
@@ -1174,7 +1188,6 @@ class Game {
         );
       }
       if (this.time % this.player.stats[SPEED] == 0) {
-        this.locked = false;
         return;
       }
     }
