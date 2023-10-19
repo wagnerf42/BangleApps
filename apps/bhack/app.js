@@ -111,8 +111,10 @@ const KNIGHT = 1;
 const FLOOR = 100;
 const EXIT = 101;
 const TOMBSTONE = 102;
+const GOLD = 400;
+const CHEST = 403;
 
-const EDIBLE_IMAGES = [
+const SPECIAL_ITEMS_IMAGES = [
   // gold (img 786)
   h.decompress(
     atob(
@@ -131,6 +133,8 @@ const EDIBLE_IMAGES = [
       "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
     )
   ),
+  // chest (img 586)
+  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o=")),
 ];
 
 const ITEM_IMAGES = [
@@ -316,7 +320,7 @@ const IMAGES = [
   MISC_IMAGES,
   BORDER_IMAGES,
   ITEM_IMAGES,
-  EDIBLE_IMAGES,
+  SPECIAL_ITEMS_IMAGES,
 ];
 
 // brightness 0, contrast 70
@@ -391,7 +395,7 @@ const ITEMS = [
   "Stone Amulet",
 ];
 
-const EDIBLES = ["Gold", "Food", "Life Potion"];
+const SPECIAL_ITEMS = ["Gold", "Food", "Life Potion", "Chest"];
 
 class Creature {
   constructor(monster_type, position) {
@@ -433,7 +437,7 @@ class Creature {
   treasure() {
     // let's have a 40% change of dropping something
     if (Math.random() < 0.4) {
-      return 400 + randint(0, EDIBLES.length - 1);
+      return 400 + randint(0, SPECIAL_ITEMS.length - 2); // -2 because we don't drop the chest
     } else {
       return FLOOR;
     }
@@ -528,9 +532,17 @@ class Creature {
 }
 
 class Room {
-  constructor(width, height) {
-    this.width = randint(3, 5);
-    this.height = randint(3, 5);
+  constructor(width, height, room_width, room_height) {
+    if (room_width === undefined) {
+      this.width = randint(3, 5);
+    } else {
+      this.width = room_width;
+    }
+    if (room_height === undefined) {
+      this.height = randint(3, 5);
+    } else {
+      this.height = room_height;
+    }
     this.x = randint(2, width - this.width - 2);
     this.y = randint(2, height - this.height - 2);
   }
@@ -564,10 +576,12 @@ class Room {
     }
   }
   random_inner_position(map) {
-    let x = randint(this.x + 1, this.x + this.width - 2);
-    let y = randint(this.y + 1, this.y + this.height - 2);
-    if (map.get_cell({ x: x, y: y }) == FLOOR) {
-      return { x: x, y: y };
+    while (true) {
+      let x = randint(this.x + 1, this.x + this.width - 2);
+      let y = randint(this.y + 1, this.y + this.height - 2);
+      if (map.get_cell({ x: x, y: y }) == FLOOR) {
+        return { x: x, y: y };
+      }
     }
   }
 }
@@ -597,6 +611,7 @@ class Map {
     this.height = height;
     this.seed = E.hwRand();
     this.level = game.dungeon_level;
+    this.chest_opened = false; // mark if player already tried opening the chest (if any)
     this.compute_allowed_monsters();
     E.srand(this.seed);
     this.map = new Uint16Array(width * height);
@@ -606,6 +621,14 @@ class Map {
       let room = new Room(width, height);
       this.fill_room(room);
       rooms.push(room);
+    }
+    if (this.level % 4 == 0) {
+      game.msg("You feel", "#00ff00");
+      game.msg("something special", "#00ff00");
+      let special_room = new Room(width, height, 5, 5);
+      this.fill_room(special_room);
+      this.fill_special_room(special_room, game.monsters);
+      rooms.push(special_room);
     }
     this.generate_corridors(rooms);
     this.fill_borders();
@@ -634,10 +657,22 @@ class Map {
       this.secret = this.find_secret(this.hidden_room);
     }
   }
+  fill_special_room(room, monsters) {
+    if (randint(1,2) == 1) {
+      // gold and monsters
+    for (let i = 0; i < 3; i++) {
+      this.generate_monster(room, monsters);
+      this.set_cell(room.random_inner_position(this), GOLD);
+    }
+    } else {
+      // chest
+      this.set_cell({x: room.x + 3, y: room.y + 3}, CHEST);
+    }
+  }
 
   compute_allowed_monsters() {
-    let min_xp = 30 * Math.pow(2, Math.floor(this.level/2));
-    let max_xp = 100 * Math.pow(2, Math.floor(this.level/2));
+    let min_xp = 30 * Math.pow(2, Math.floor(this.level / 2));
+    let max_xp = 100 * Math.pow(2, Math.floor(this.level / 2));
     let min_index = 2;
     let max_index = 2;
     let prec_xp = 0;
@@ -1097,6 +1132,20 @@ class Game {
       this.monsters = [];
       this.items = [];
       this.start();
+    } else if (destination_content == CHEST) {
+      if (this.map.chest_opened == false) {
+        this.map.chest_opened = true;
+        if (randint(1, 100) <= 50) { // TODO: have a talent increasing this
+          this.msg("You open the chest", "#00ff00");
+          let loot = random_item(this.dungeon_level + 2, destination);
+          this.map.set_cell(destination, loot.tile());
+        } else {
+          this.msg("You fail opening", "#ff0000");
+          this.msg("the chest", "#ff0000");
+        }
+      } else {
+        this.msg("You fail again");
+      }
     } else {
       // move
       let start_position = {
@@ -1105,10 +1154,10 @@ class Game {
       };
       let dropping = null;
       if (destination_content >= 400) {
-        // edible
+        // special item
         if (destination_content == 400) {
           // gold
-          let amount = randint(1, 10); //TODO level based amount
+          let amount = randint(1, 10) * this.dungeon_level;
           this.player.gold += amount;
           this.msg("" + amount + " gold");
         } else if (destination_content == 401) {
