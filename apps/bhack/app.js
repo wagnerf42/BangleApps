@@ -572,6 +572,25 @@ class Room {
   }
 }
 
+function random_item(level, position) {
+  let min_value = 50 * Math.pow(2, Math.floor(level / 2));
+  let max_value = 200 * Math.pow(2, Math.floor(level / 2));
+  let min_index = 0;
+  let max_index = 0;
+  let prec_value = 0;
+  ITEMS_STATS.forEach((item, index) => {
+    if (item[VALUE] <= max_value) {
+      max_index = index;
+    }
+    if (item[VALUE] >= min_value && prec_value < min_value) {
+      min_index = index;
+    }
+    prec_value = item[VALUE];
+  });
+
+  return new Item(randint(min_index, max_index), position);
+}
+
 class Map {
   constructor(width, height, game) {
     this.width = width;
@@ -604,7 +623,7 @@ class Map {
     // now generate some loot
     let loot_position =
       rooms[randint(0, rooms.length - 1)].random_free_position(this);
-    let loot = new Item(randint(0, ITEMS.length - 1), loot_position);
+    let loot = random_item(this.level, loot_position);
     game.items.push(loot);
     this.set_cell(loot_position, loot.tile());
 
@@ -617,8 +636,8 @@ class Map {
   }
 
   compute_allowed_monsters() {
-    let min_xp = 100 * Math.pow(2, this.level - 5);
-    let max_xp = 100 * Math.pow(2, this.level - 2);
+    let min_xp = 30 * Math.pow(2, Math.floor(this.level/2));
+    let max_xp = 100 * Math.pow(2, Math.floor(this.level/2));
     let min_index = 2;
     let max_index = 2;
     let prec_xp = 0;
@@ -918,7 +937,7 @@ class Game {
     let r = this.map.hidden_room;
     this.map.fill_room(r);
     let item_position = r.random_free_position(this.map);
-    let new_item = new Item(randint(0, ITEMS.length - 1), item_position);
+    let new_item = random_item(this.dungeon_level, item_position);
     game.items.push(new_item);
     this.map.set_cell(item_position, new_item.tile());
     r.on_border((pos) => {
@@ -947,10 +966,9 @@ class Game {
     if (color === undefined) {
       color = "#ffffff";
     }
-    this.messages.push({msg: message, color: color});
+    this.messages.push({ msg: message, color: color });
   }
   show_msg() {
-    
     g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
     let msg = this.messages.shift();
     if (msg !== undefined) {
@@ -963,20 +981,24 @@ class Game {
       game.locked = false;
       return;
     }
-    
-    let msg_interval = setInterval((messages) => {
-      let msg = messages.shift();
-      if (msg === undefined) {
-        clearInterval(msg_interval);
-        game.locked = false;
-      } else {
-      g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
-      g.setColor(msg.color)
-        .setFont("4x6:2")
-        .setFontAlign(-1, 1, 0)
-        .drawString(msg.msg, 0, g.getHeight());
-      }
-    }, 400, this.messages);
+
+    let msg_interval = setInterval(
+      (messages) => {
+        let msg = messages.shift();
+        if (msg === undefined) {
+          clearInterval(msg_interval);
+          game.locked = false;
+        } else {
+          g.setColor(0, 0, 0).fillRect(0, MAP_WIDTH, MAP_HEIGHT, g.getHeight());
+          g.setColor(msg.color)
+            .setFont("4x6:2")
+            .setFontAlign(-1, 1, 0)
+            .drawString(msg.msg, 0, g.getHeight());
+        }
+      },
+      400,
+      this.messages
+    );
   }
   start() {
     this.map = new Map(30, 30, this);
@@ -1174,7 +1196,10 @@ class Game {
             let dmg = Math.ceil(monster.poisoned);
             monster.hp -= 2 * dmg;
             monster.poisoned -= 0.2 * dmg;
-            this.msg("Poison hit " + monster.name() + " (" + dmg + ")", "#ff0000");
+            this.msg(
+              "Poison hit " + monster.name() + " (" + dmg + ")",
+              "#ff0000"
+            );
             if (monster.hp <= 0) {
               monster.dies();
             }
