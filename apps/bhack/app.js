@@ -134,7 +134,11 @@ const SPECIAL_ITEMS_IMAGES = [
     )
   ),
   // chest (img 586)
-  h.decompress(atob("kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o=")),
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o="
+    )
+  ),
 ];
 
 const ITEM_IMAGES = [
@@ -658,15 +662,15 @@ class Map {
     }
   }
   fill_special_room(room, monsters) {
-    if (randint(1,2) == 1) {
+    if (randint(1, 2) == 1) {
       // gold and monsters
-    for (let i = 0; i < 3; i++) {
-      this.generate_monster(room, monsters);
-      this.set_cell(room.random_inner_position(this), GOLD);
-    }
+      for (let i = 0; i < 3; i++) {
+        this.generate_monster(room, monsters);
+        this.set_cell(room.random_inner_position(this), GOLD);
+      }
     } else {
       // chest
-      this.set_cell({x: room.x + 3, y: room.y + 3}, CHEST);
+      this.set_cell({ x: room.x + 3, y: room.y + 3 }, CHEST);
     }
   }
 
@@ -989,7 +993,7 @@ class Game {
     this.map.secret = null;
   }
   level_up() {
-    let hp_increment = randint(1, 10);
+    let hp_increment = 4 + randint(1, 6);
     this.player.stats[MAX_HP] += hp_increment;
     this.player.hp += hp_increment;
     this.player.stats[ATTACK] += 1;
@@ -1074,11 +1078,15 @@ class Game {
         game = new Game();
       });
     } else if (this.screen == LEVEL_UP_SCREEN) {
-      g.drawString(
+      g
+        .setFont("4x6:2")
+        .setFontAlign(0, 1, 0)
+        .drawString(
         "level up !\nswipe to unlock",
         g.getWidth() / 2,
         g.getHeight() / 2
       );
+      g.flip();
     } else {
       this.map.display();
       this.display_stats();
@@ -1135,9 +1143,11 @@ class Game {
     } else if (destination_content == CHEST) {
       if (this.map.chest_opened == false) {
         this.map.chest_opened = true;
-        if (randint(1, 100) <= 50) { // TODO: have a talent increasing this
+        if (randint(1, 100) <= 50) {
+          // TODO: have a talent increasing this
           this.msg("You open the chest", "#00ff00");
           let loot = random_item(this.dungeon_level + 2, destination);
+          game.items.push(loot);
           this.map.set_cell(destination, loot.tile());
         } else {
           this.msg("You fail opening", "#ff0000");
