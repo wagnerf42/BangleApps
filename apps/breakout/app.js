@@ -181,7 +181,7 @@ class Game {
       let b1 = columnOffset + line1 * 3;
       let b2 = columnOffset + line2 * 3;
       let bricks = this.bricks;
-      if (b1 >= 0 && bricks[b1 + 2] == 1) {
+      if (line1 >= 0 && bricks[b1 + 2] == 1) {
         g.setColor(g.getBgColor());
         let x = bricks[b1];
         let y = bricks[b1 + 1];
@@ -191,7 +191,7 @@ class Game {
         this.score += collisionColumn * 10;
         this.remainingBricks -= 1;
       }
-      if (b2 < bricksPerColumns && bricks[b2 + 2] == 1) {
+      if (line2 < bricksPerColumns && bricks[b2 + 2] == 1) {
         g.setColor(g.getBgColor());
         let x = bricks[b2];
         let y = bricks[b2 + 1];
