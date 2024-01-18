@@ -181,7 +181,7 @@ class Game {
       let b1 = columnOffset + line1 * 3;
       let b2 = columnOffset + line2 * 3;
       let bricks = this.bricks;
-      if (line1 >= 0 && bricks[b1 + 2] == 1) {
+      if (line1 >= 0 && line1 < bricksPerColumns && bricks[b1 + 2] == 1) {
         g.setColor(g.getBgColor());
         let x = bricks[b1];
         let y = bricks[b1 + 1];
@@ -191,7 +191,7 @@ class Game {
         this.score += collisionColumn * 10;
         this.remainingBricks -= 1;
       }
-      if (line2 < bricksPerColumns && bricks[b2 + 2] == 1) {
+      if (line2 >= 0 && line2 < bricksPerColumns && bricks[b2 + 2] == 1) {
         g.setColor(g.getBgColor());
         let x = bricks[b2];
         let y = bricks[b2 + 1];
@@ -205,10 +205,10 @@ class Game {
         ball.speedX = -ball.speedX;
       }
       if (this.remainingBricks == 0) {
-
         clearInterval(gameInterval);
         g.clear();
         g.setColor(0).setFont("Vector:28").setFontAlign(0, 0).drawString("Victory", g.getWidth()/2, g.getHeight()/2);
+        Bangle.setLocked(false);
         return;
       }
     }
@@ -227,6 +227,7 @@ class Game {
         g.clear();
         g.setColor(0).setFont("Vector:28").setFontAlign(0, 0).drawString("Game Over", g.getWidth()/2, g.getHeight()/2-10);
         g.drawString("score: "+this.score, g.getWidth()/2, g.getHeight()/2+25);
+        Bangle.setLocked(false);
         return;
       }
     }
