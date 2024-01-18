@@ -1,0 +1,18 @@
+{
+  "id": "breakout",
+  "name": "Breakout",
+  "shortName": "Breakout",
+  "version": "0.01",
+  "description": "A small breakout game.",
+  "allow_emulator":false,
+  "icon": "breakout.png",
+  "type": "app",
+  "tags": "game",
+  "screenshots": [{"url":"breakout_screenshot.png"}],
+  "supports": ["BANGLEJS2"],
+  "readme": "README.md",
+  "storage": [
+    {"name":"breakout.app.js","url":"app.js"},
+    {"name":"breakout.img","url":"app-icon.js","evaluate":true}
+  ]
+}
