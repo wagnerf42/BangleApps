@@ -5,13 +5,13 @@ const ballRadius = 3;
 const brickDistance = 2 * ballRadius;
 const colors = ["#ff0000", "#ffa500", "#ffff00", "#00ff00", "#00ffff"];
 
-const topBorder = 14;
+const topBorder = 16;
 const availableHeight = g.getHeight() - topBorder;
 const bricksPerColumns = 7;
 const brickHeight = Math.floor((availableHeight - 2*(bricksPerColumns-1)) / bricksPerColumns);
 const startY =
   topBorder +
-  Math.floor((availableHeight - bricksPerColumns * (brickHeight + 2)) / 2);
+  Math.floor((availableHeight - bricksPerColumns * (brickHeight + 2) + 2) / 2);
 const detectionWidth = brickWidth + brickDistance;
 const firstColumnX = g.getWidth() - detectionWidth * numColumns - 2;
 const columnsOffset = (firstColumnX - ballRadius) % detectionWidth;
@@ -115,14 +115,19 @@ class Game {
     g.setColor(color);
     g.fillCircle(x, y, this.ball.radius);
   }
+  
+  drawInfo() {
+    g.setColor(0).setFontAlign(-1, -1).setFont("6x8:2").drawString("lvl "+this.level, 10, 0);
+    for(let i = 0 ; i < this.lives ; i++) {
+      g.drawImage(heart, firstHeartX + i*(heart.width+4), 3);
+    }
+    g.setColor(0, 0, 0).drawLine(0, topBorder-2, g.getWidth(), topBorder);
+  }
 
   initialDisplay() {
     g.clear();
-    g.setColor(0).setFont("6x8:2").drawString("lvl "+this.level, 10, 0);
+    this.drawInfo();
     let c = 0;
-    for(let i = 0 ; i < this.lives ; i++) {
-      g.drawImage(heart, firstHeartX + i*(heart.width+4), 2);
-    }
     for (let i = 0; i < numColumns; i++) {
       let color = colors[i];
       for (let j = 0; j < bricksPerColumns; j++) {
@@ -228,6 +233,9 @@ class Game {
     // Clear the old ball position
     this.drawBall(old_x, old_y, g.getBgColor());
     this.redraw_bricks();
+    if (old_y - ball.radius <= topBorder) {
+      this.drawInfo();
+    }
 
     // Update the ball's position
     ball.x += ball.speedX;
@@ -332,7 +340,6 @@ function startGame() {
 }
 
 function updateGame() {
-  g.setColor(0, 0, 0).drawLine(0, topBorder, g.getWidth(), topBorder);
   game.updatePaddle();
   game.updateBall();
   g.flip();
