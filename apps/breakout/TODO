@@ -1,0 +1,5 @@
+- bonuses are erasing the bricks
+- collision detection is not 100% ok. sometimes we see an eaten brick
+- force transfer is opposite when coming from top or bottom
+- calibration is not ok: cannot play upside down
+- more score when paddle is shorter

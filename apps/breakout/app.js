@@ -4,11 +4,15 @@ const numColumns = 5;
 const ballRadius = 3;
 const brickDistance = 2 * ballRadius;
 const colors = ["#ff0000", "#ffa500", "#ffff00", "#00ff00", "#00ffff"];
+const bonusColors = ["#ff0000", "#00ff00", "#0000ff"];
 
 const topBorder = 16;
 const availableHeight = g.getHeight() - topBorder;
 const bricksPerColumns = 7;
 const brickHeight = Math.floor((availableHeight - 2*(bricksPerColumns-1)) / bricksPerColumns);
+const bonusHeight = brickHeight / 2;
+const bonusWidth = bonusHeight;
+let paddleHeight = 40;
 const startY =
   topBorder +
   Math.floor((availableHeight - bricksPerColumns * (brickHeight + 2) + 2) / 2);
@@ -67,6 +71,7 @@ class Game {
     this.level = level;
     this.redrawn_bricks = [];
     this.remainingBricks = numColumns * bricksPerColumns;
+    paddleHeight = 40;
     this.paddleY = topBorder + availableHeight / 2;
     this.paddleSpeed = 0;
     this.ball = {
@@ -75,7 +80,9 @@ class Game {
       radius: ballRadius, // Radius of the ball
       speedX: 2, // Initial speed of the ball along the X-axis
       speedY: 2, // Initial speed of the ball along the Y-axis
+      superBallStart: null, // Are we a superball and since when ?
     };
+    this.bonus = null;
 
     let bricks = new Uint8Array(numColumns * bricksPerColumns * 3);
 
@@ -108,7 +115,7 @@ class Game {
 
   drawPaddle(color) {
     g.setColor(color);
-    g.fillRect(2, this.paddleY - 20, 5, this.paddleY + 20);
+    g.fillRect(2, this.paddleY, 5, this.paddleY + paddleHeight);
   }
 
   drawBall(x, y, color) {
@@ -165,8 +172,8 @@ class Game {
 
     // Ensure the paddle stays within the screen boundaries
     this.paddleY = Math.max(
-      topBorder + 20,
-      Math.min(g.getHeight() - 20, this.paddleY)
+      topBorder,
+      Math.min(g.getHeight() - paddleHeight, this.paddleY)
     );
     if (this.paddleSpeed > 0) {
       this.paddleSpeed = Math.min(
@@ -189,23 +196,32 @@ class Game {
     let x = bricks[brick_index];
     let y = bricks[brick_index + 1];
     let brick_status = bricks[brick_index+2];
-    if (brick_status == 1) {
+    let bouncing = true;
+    if (brick_status == 1 || (brick_status == 2 && this.ball.superBallStart !== null)) {
       this.score += collisionColumn * 10;
       this.remainingBricks -= 1;
+      bricks[brick_index + 2] = 0;
+      if (this.bonus === null && Math.random() < 0.2) {
+        let type = Math.floor(Math.random() * 3);
+        this.bonus = { x: x, y: y+bonusHeight, type: type, color: bonusColors[type] };
+      }
+      if (this.ball.superBallStart !== null) {
+        bouncing = false;
+      }
     } else {
       this.redrawn_bricks.push(brick_index);
     }
-    if (brick_status != 3) {
+    if (brick_status == 2 && this.ball.superBallStart === null) {
       bricks[brick_index + 2] -= 1;
     }
     g.setColor(g.getBgColor());
     g.fillRect(x, y, x + brickWidth, y + brickHeight);
     if (this.ball.x > x + brickWidth/2) {
       // if we touch on the right and come from the right we bounce
-      return (this.ball.speedX < 0);
+      return (bouncing && this.ball.speedX < 0);
     } else {
       // if we touch on the left and come from the left we bounce
-      return (this.ball.speedX > 0);
+      return (bouncing && this.ball.speedX > 0);
     }
   }
 
@@ -225,9 +241,56 @@ class Game {
       g.fillRect(x, y, x + brickWidth, y + brickHeight);
     }
   }
+  
+  updateBonus() {
+    if (this.bonus === null) {
+      return;
+    }
+    g.setColor(g.getBgColor()).fillRect(this.bonus.x, this.bonus.y, this.bonus.x+bonusWidth, this.bonus.y+bonusHeight);
+    this.bonus.x -= 3;
+    // see if we exit the screen
+    if (this.bonus.x + bonusWidth < 0) {
+      this.bonus = null;
+      return;
+    }
+    // see if we touch the paddle
+    if (this.bonus.x < 5 && this.bonus.x + bonusWidth > 2) {
+      if (this.bonus.y < this.paddleY + paddleHeight && this.bonus.y > this.paddleY) {
+        this.drawPaddle(g.getBgColor());
+        if (this.bonus.type == 0) {
+          // shrink paddle
+          if (paddleHeight > 2) {
+            paddleHeight -= 6;
+            this.paddleY += 3;
+          }
+        } else if (this.bonus.type == 1) {
+          // grow paddle
+          paddleHeight += 6;
+
+          this.paddleY -= 3;
+          this.paddleY = Math.max(
+            topBorder,
+            Math.min(g.getHeight() - paddleHeight, this.paddleY)
+          );
+
+        } else {
+          // super ball
+          this.ball.superBallStart = getTime();
+        }
+        this.drawPaddle(1);
+        this.bonus = null;
+        return;
+      }
+    }
+    // redraw in new position
+    g.setColor(this.bonus.color).fillRect(this.bonus.x, this.bonus.y, this.bonus.x+bonusWidth, this.bonus.y+bonusHeight);
+  }
 
   updateBall() {
     let ball = this.ball;
+    if (ball.superBallStart !== null && getTime() - ball.superBallStart > 5) {
+      ball.superBallStart = null;
+    }
     let old_x = ball.x;
     let old_y = ball.y;
     // Clear the old ball position
@@ -257,8 +320,8 @@ class Game {
     // Bounce off the paddle
     if (
       ball.x - ball.radius < 7 &&
-      ball.y > this.paddleY - 20 &&
-      ball.y < this.paddleY + 20
+      ball.y > this.paddleY &&
+      ball.y < this.paddleY + 40
     ) {
       ball.speedX = Math.abs(ball.speedX);
       ball.speedY += this.paddleSpeed * 0.3;
@@ -308,6 +371,7 @@ class Game {
       ball.speedX = 2;
       ball.speedY = 2;
       this.lives -= 1;
+      paddleHeight = 40;
       let x = firstHeartX + this.lives * (heart.width + 4);
       g.setColor(g.getBgColor()).fillRect(x, 2, x+heart.width, 2+heart.height);
       if (this.lives == 0) {
@@ -321,7 +385,8 @@ class Game {
     }
 
     // Draw the new ball position
-    this.drawBall(ball.x, ball.y, 1);
+    let ballColor = (ball.superBallStart === null)?1:"#FF0000";
+    this.drawBall(ball.x, ball.y, ballColor);
   }
 }
 
@@ -340,9 +405,15 @@ function startGame() {
 }
 
 function updateGame() {
+  let start = getTime();
+  game.updateBonus();
   game.updatePaddle();
   game.updateBall();
   g.flip();
+  let done_in = getTime() - start;
+  if (done_in > 1/20) {
+    console.log("too slow:", done_in);
+  }
 }
 
 startGame();
