@@ -10,7 +10,7 @@ const topBorder = 16;
 const availableHeight = g.getHeight() - topBorder;
 const bricksPerColumns = 7;
 const brickHeight = Math.floor((availableHeight - 2*(bricksPerColumns-1)) / bricksPerColumns);
-const bonusHeight = brickHeight / 2;
+const bonusHeight = 2*ballRadius;
 const bonusWidth = bonusHeight;
 let paddleHeight = 40;
 const startY =
@@ -67,9 +67,30 @@ class Game {
     this.score = 0;
   }
 
-  load_level(level) {
+  displayBrick(column, line) {
+    let brickIndex = (column*bricksPerColumns+line) * 3;
+    let active = this.bricks[brickIndex+2];
+    let color;
+    if (active == 0) {
+      color = null;
+    } else if (active == 1) {
+      color = colors[column];
+    } else if (active == 2) {
+      color = "#808080";
+    } else if (active == 3) {
+      color = "#5A5A5A";
+    }
+    if (color !== null) {
+      let x = this.bricks[brickIndex];
+      let y = this.bricks[brickIndex + 1];
+      g.setColor(color);
+      g.fillRect(x, y, x + brickWidth, y + brickHeight);
+    }
+  }
+
+  loadLevel(level) {
     this.level = level;
-    this.redrawn_bricks = [];
+    this.redrawnBricks = [];
     this.remainingBricks = numColumns * bricksPerColumns;
     paddleHeight = 40;
     this.paddleY = topBorder + availableHeight / 2;
@@ -134,24 +155,9 @@ class Game {
   initialDisplay() {
     g.clear();
     this.drawInfo();
-    let c = 0;
     for (let i = 0; i < numColumns; i++) {
-      let color = colors[i];
       for (let j = 0; j < bricksPerColumns; j++) {
-        let x = this.bricks[c];
-        let y = this.bricks[c + 1];
-        let active = this.bricks[c + 2];
-        c += 3;
-        if (active == 1) {
-          g.setColor(color);
-        } else if (active == 2) {
-          g.setColor("#808080");
-        } else if (active == 3) {
-          g.setColor("#5A5A5A");
-        }
-        if (active >= 1) {
-          g.fillRect(x, y, x + brickWidth, y + brickHeight);
-        }
+        this.displayBrick(i, j)
       }
     }
   }
@@ -191,28 +197,28 @@ class Game {
     this.drawPaddle(1);
   }
 
-  brick_collision(brick_index, collisionColumn) {
+  brickCollision(brickIndex, collisionColumn, line) {
     let bricks = this.bricks;
-    let x = bricks[brick_index];
-    let y = bricks[brick_index + 1];
-    let brick_status = bricks[brick_index+2];
+    let x = bricks[brickIndex];
+    let y = bricks[brickIndex + 1];
+    let brickStatus = bricks[brickIndex+2];
     let bouncing = true;
-    if (brick_status == 1 || (brick_status == 2 && this.ball.superBallStart !== null)) {
-      this.score += collisionColumn * 10;
+    if (brickStatus == 1 || (brickStatus == 2 && this.ball.superBallStart !== null)) {
+      this.score += collisionColumn * (availableHeight - paddleHeight);
       this.remainingBricks -= 1;
-      bricks[brick_index + 2] = 0;
-      if (this.bonus === null && Math.random() < 0.2) {
+      bricks[brickIndex + 2] = 0;
+      if (this.bonus === null && Math.random() < 0.25) {
         let type = Math.floor(Math.random() * 3);
-        this.bonus = { x: x, y: y+bonusHeight, type: type, color: bonusColors[type] };
+        this.bonus = { x: x, y: y+bonusHeight, type: type, color: bonusColors[type], line: line };
       }
       if (this.ball.superBallStart !== null) {
         bouncing = false;
       }
     } else {
-      this.redrawn_bricks.push(brick_index);
+      this.redrawnBricks.push(brickIndex);
     }
-    if (brick_status == 2 && this.ball.superBallStart === null) {
-      bricks[brick_index + 2] -= 1;
+    if (brickStatus == 2 && this.ball.superBallStart === null) {
+      bricks[brickIndex + 2] -= 1;
     }
     g.setColor(g.getBgColor());
     g.fillRect(x, y, x + brickWidth, y + brickHeight);
@@ -225,19 +231,19 @@ class Game {
     }
   }
 
-  redraw_bricks() {
+  redrawBricks() {
     let bricks = this.bricks;
-    let n = this.redrawn_bricks.length;
+    let n = this.redrawnBricks.length;
     for (let i = 0 ; i < n ; i++) {
-      let brick_index = this.redrawn_bricks.pop();
-      if (bricks[brick_index+2] == 3) {
+      let brickIndex = this.redrawnBricks.pop();
+      if (bricks[brickIndex+2] == 3) {
         g.setColor("#5A5A5A");
       } else {
-        let collisionColumn = Math.floor(brick_index / (3*bricksPerColumns));
+        let collisionColumn = Math.floor(brickIndex / (3*bricksPerColumns));
         g.setColor(colors[collisionColumn]);
       }
-      let x = bricks[brick_index];
-      let y = bricks[brick_index + 1];
+      let x = bricks[brickIndex];
+      let y = bricks[brickIndex + 1];
       g.fillRect(x, y, x + brickWidth, y + brickHeight);
     }
   }
@@ -246,7 +252,17 @@ class Game {
     if (this.bonus === null) {
       return;
     }
+    
     g.setColor(g.getBgColor()).fillRect(this.bonus.x, this.bonus.y, this.bonus.x+bonusWidth, this.bonus.y+bonusHeight);
+
+    let collisionColumn =
+      Math.floor((this.bonus.x + bonusWidth/2 - columnsOffset) / detectionWidth) -
+      this.firstColumnIndex;
+
+    if (collisionColumn >= 0 && collisionColumn < numColumns) {
+      this.displayBrick(collisionColumn, this.bonus.line);
+    }
+
     this.bonus.x -= 3;
     // see if we exit the screen
     if (this.bonus.x + bonusWidth < 0) {
@@ -295,7 +311,7 @@ class Game {
     let old_y = ball.y;
     // Clear the old ball position
     this.drawBall(old_x, old_y, g.getBgColor());
-    this.redraw_bricks();
+    this.redrawBricks();
     if (old_y - ball.radius <= topBorder) {
       this.drawInfo();
     }
@@ -343,10 +359,10 @@ class Game {
       let b2 = columnOffset + line2 * 3;
       let bricks = this.bricks;
       if (line1 >= 0 && line1 < bricksPerColumns && bricks[b1 + 2] >= 1) {
-        bounce = this.brick_collision(b1, collisionColumn);
+        bounce = this.brickCollision(b1, collisionColumn, line1);
       }
       if (line1 != line2 && line2 >= 0 && line2 < bricksPerColumns && bricks[b2 + 2] >= 1) {
-        bounce = bounce || this.brick_collision(b2, collisionColumn);
+        bounce = bounce || this.brickCollision(b2, collisionColumn, line2);
       }
       if (bounce) {
         ball.speedX = -ball.speedX;
@@ -354,7 +370,7 @@ class Game {
       if (this.remainingBricks == 0) {
         clearInterval(gameInterval);
         if (this.level < LEVELS.length-1) {
-          this.load_level(this.level+1);
+          this.loadLevel(this.level+1);
         } else {
           g.clear();
           g.setColor(0).setFont("Vector:28").setFontAlign(0, 0).drawString("Victory", g.getWidth()/2, g.getHeight()/2);
@@ -374,6 +390,7 @@ class Game {
       paddleHeight = 40;
       let x = firstHeartX + this.lives * (heart.width + 4);
       g.setColor(g.getBgColor()).fillRect(x, 2, x+heart.width, 2+heart.height);
+      this.drawPaddle(g.getBgColor());
       if (this.lives == 0) {
         clearInterval(gameInterval);
         g.clear();
@@ -400,7 +417,7 @@ function startGame() {
       y += Bangle.getAccel().y;
     }
     restingY = y / 100;
-    game.load_level(0);
+    game.loadLevel(0);
   }, 10);
 }
 
