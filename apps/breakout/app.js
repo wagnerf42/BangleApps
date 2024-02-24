@@ -1,4 +1,5 @@
 // constants for bricks positions...
+const fps = 22; // frames displayed each second (also impact ball speed)
 const brickWidth = 10;
 const numColumns = 5;
 const ballRadius = 3;
@@ -57,7 +58,7 @@ const LEVELS = [
 ];
 
 // Adjust this value based on the accelerometer reading when the watch is at rest vertically
-let restingY = -0.35;
+let restingAngle = 0;
 let game = null;
 let gameInterval;
 
@@ -131,7 +132,7 @@ class Game {
     this.firstColumnIndex =
       (this.bricks[0] - columnsOffset - this.ball.radius) / detectionWidth;
     this.initialDisplay();
-    gameInterval = setInterval(updateGame, 50);
+    gameInterval = setInterval(updateGame, 1000/fps);
   }
 
   drawPaddle(color) {
@@ -164,13 +165,16 @@ class Game {
 
   updatePaddle() {
     // Get accelerometer data
-    const accelY = Bangle.getAccel().y;
+    const angle = rawAngle();
+    let tilt = angle - restingAngle;
+    if (tilt > Math.PI) { tilt -= 2*Math.PI }
+    if (tilt < -Math.PI) { tilt += 2*Math.PI }
 
     // Clear the old paddle position
     this.drawPaddle(g.getBgColor());
 
-    // Adjust paddle speed based on acceleration on the y-axis
-    this.paddleSpeed = (restingY - accelY) * 30; // You can adjust the multiplier for sensitivity
+    // Adjust paddle speed based on watch tilt
+    this.paddleSpeed = tilt * 30; // You can adjust the multiplier for sensitivity
 
     const oldY = this.paddleY;
     // Adjust paddle position based on accelerometer data
@@ -387,15 +391,15 @@ class Game {
       ball.speedX = 2;
       ball.speedY = 2;
       this.lives -= 1;
-      paddleHeight = 40;
       let x = firstHeartX + this.lives * (heart.width + 4);
       g.setColor(g.getBgColor()).fillRect(x, 2, x+heart.width, 2+heart.height);
       this.drawPaddle(g.getBgColor());
+      paddleHeight = 40;
       if (this.lives == 0) {
         clearInterval(gameInterval);
         g.clear();
         g.setColor(0).setFont("Vector:28").setFontAlign(0, 0).drawString("Game Over", g.getWidth()/2, g.getHeight()/2-10);
-        g.drawString("score: "+this.score, g.getWidth()/2, g.getHeight()/2+25);
+        g.setFont("Vector:22").drawString("score: "+this.score, g.getWidth()/2, g.getHeight()/2+25);
         Bangle.setLocked(false);
         return;
       }
@@ -409,14 +413,20 @@ class Game {
 
 Bangle.setOptions({ backlightTimeout: 0 }); // Disable backlight timeout
 
+function rawAngle() {
+  "jit";
+  let acc = Bangle.getAccel();
+  return Math.atan2(acc.y, acc.z);
+}
+
 function startGame() {
   game = new Game();
   setTimeout(() => {
-    let y = 0;
+    let anglesSum = 0;
     for (let i = 0; i < 100; i++) {
-      y += Bangle.getAccel().y;
+      anglesSum += rawAngle();
     }
-    restingY = y / 100;
+    restingAngle = anglesSum / 100;
     game.loadLevel(0);
   }, 10);
 }
@@ -428,7 +438,7 @@ function updateGame() {
   game.updateBall();
   g.flip();
   let done_in = getTime() - start;
-  if (done_in > 1/20) {
+  if (done_in > 1/fps) {
     console.log("too slow:", done_in);
   }
 }
