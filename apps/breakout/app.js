@@ -213,7 +213,9 @@ class Game {
       bricks[brickIndex + 2] = 0;
       if (this.bonus === null && Math.random() < 0.25) {
         let type = Math.floor(Math.random() * 3);
-        this.bonus = { x: x, y: y+bonusHeight, type: type, color: bonusColors[type], line: line };
+        this.bonus = {
+          rect: {x: x, y: y+bonusHeight, w: bonusWidth, h: bonusHeight},
+          type: type, color: bonusColors[type], line: line };
       }
       if (this.ball.superBallStart !== null) {
         bouncing = false;
@@ -257,25 +259,25 @@ class Game {
       return;
     }
     
-    g.setColor(g.getBgColor()).fillRect(this.bonus.x, this.bonus.y, this.bonus.x+bonusWidth, this.bonus.y+bonusHeight);
+    g.setColor(g.getBgColor()).fillRect(this.bonus.rect);
 
     let collisionColumn =
-      Math.floor((this.bonus.x + bonusWidth/2 - columnsOffset) / detectionWidth) -
+      Math.floor((this.bonus.rect.x + bonusWidth/2 - columnsOffset) / detectionWidth) -
       this.firstColumnIndex;
 
     if (collisionColumn >= 0 && collisionColumn < numColumns) {
       this.displayBrick(collisionColumn, this.bonus.line);
     }
 
-    this.bonus.x -= 3;
+    const newX = this.bonus.rect.x - 3;
     // see if we exit the screen
-    if (this.bonus.x + bonusWidth < 0) {
+    if (newX + bonusWidth < 0) {
       this.bonus = null;
       return;
     }
     // see if we touch the paddle
-    if (this.bonus.x < 5 && this.bonus.x + bonusWidth > 2) {
-      if (this.bonus.y < this.paddleY + paddleHeight && this.bonus.y > this.paddleY) {
+    if (newX < 5 && newX + bonusWidth > 2) {
+      if (this.bonus.rect.y < this.paddleY + paddleHeight && this.bonus.rect.y > this.paddleY) {
         this.drawPaddle(g.getBgColor());
         if (this.bonus.type == 0) {
           // shrink paddle
@@ -303,7 +305,8 @@ class Game {
       }
     }
     // redraw in new position
-    g.setColor(this.bonus.color).fillRect(this.bonus.x, this.bonus.y, this.bonus.x+bonusWidth, this.bonus.y+bonusHeight);
+    this.bonus.rect.x = newX;
+    g.setColor(this.bonus.color).fillRect(this.bonus.rect);
   }
 
   updateBall() {
@@ -311,12 +314,12 @@ class Game {
     if (ball.superBallStart !== null && getTime() - ball.superBallStart > 5) {
       ball.superBallStart = null;
     }
-    let old_x = ball.x;
-    let old_y = ball.y;
+    let oldX = ball.x;
+    let oldY = ball.y;
     // Clear the old ball position
-    this.drawBall(old_x, old_y, g.getBgColor());
+    this.drawBall(oldX, oldY, g.getBgColor());
     this.redrawBricks();
-    if (old_y - ball.radius <= topBorder) {
+    if (oldY - ball.radius <= topBorder) {
       this.drawInfo();
     }
 
@@ -434,12 +437,15 @@ function startGame() {
 function updateGame() {
   let start = getTime();
   game.updateBonus();
+  let t1 = getTime();
   game.updatePaddle();
+  let t2 = getTime();
   game.updateBall();
+  let t3 = getTime();
   g.flip();
-  let done_in = getTime() - start;
+  let done_in = t3 - start;
   if (done_in > 1/fps) {
-    console.log("too slow:", done_in);
+    console.log("too slow:", done_in, "bonus", t1-start, "paddle", t2-t1, "ball", t3-t2);
   }
 }
 
