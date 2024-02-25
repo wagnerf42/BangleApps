@@ -1,5 +1,5 @@
 // constants for bricks positions...
-const fps = 22; // frames displayed each second (also impact ball speed)
+const fps = 23; // frames displayed each second (also impact ball speed)
 const brickWidth = 10;
 const numColumns = 5;
 const ballRadius = 3;
@@ -140,11 +140,6 @@ class Game {
     g.fillRect(2, this.paddleY, 5, this.paddleY + paddleHeight);
   }
 
-  drawBall(x, y, color) {
-    g.setColor(color);
-    g.fillCircle(x, y, this.ball.radius);
-  }
-  
   drawInfo() {
     g.setColor(0).setFontAlign(-1, -1).setFont("6x8:2").drawString("lvl "+this.level, 10, 0);
     for(let i = 0 ; i < this.lives ; i++) {
@@ -317,7 +312,7 @@ class Game {
     let oldX = ball.x;
     let oldY = ball.y;
     // Clear the old ball position
-    this.drawBall(oldX, oldY, g.getBgColor());
+    g.setColor(g.getBgColor()).fillCircle(oldX, oldY, this.ball.radius);
     this.redrawBricks();
     if (oldY - ball.radius <= topBorder) {
       this.drawInfo();
@@ -380,7 +375,8 @@ class Game {
           this.loadLevel(this.level+1);
         } else {
           g.clear();
-          g.setColor(0).setFont("Vector:28").setFontAlign(0, 0).drawString("Victory", g.getWidth()/2, g.getHeight()/2);
+          g.setColor(0).setFont("Vector:28").setFontAlign(0, 0).drawString("Victory", g.getWidth()/2, g.getHeight()/2-10);
+          g.setFont("Vector:22").drawString("score: "+this.score, g.getWidth()/2, g.getHeight()/2+25);
           Bangle.setLocked(false);
         }
         return;
@@ -409,8 +405,8 @@ class Game {
     }
 
     // Draw the new ball position
-    let ballColor = (ball.superBallStart === null)?1:"#FF0000";
-    this.drawBall(ball.x, ball.y, ballColor);
+    const ballColor = (ball.superBallStart === null)?1:"#FF0000";
+    g.setColor(ballColor).fillCircle(ball.x, ball.y, ballRadius);
   }
 }
 
