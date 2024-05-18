@@ -407,6 +407,7 @@ class Creature {
       this.gold = 0;
       this.level = 1;
       this.satiation = 400;
+      this.piety = 1000;
       this.stats = Int16Array(MONSTERS_STATS[monster_type]);
       this.talents = [];
     } else {
@@ -626,7 +627,7 @@ class Map {
       this.fill_room(room);
       rooms.push(room);
     }
-    if (this.level % 4 == 0) {
+    if (this.level % 3 == 0) {
       game.msg("You feel", "#00ff00");
       game.msg("something special", "#00ff00");
       let special_room = new Room(width, height, 5, 5);
@@ -1079,6 +1080,7 @@ class Game {
       });
     } else if (this.screen == LEVEL_UP_SCREEN) {
       g
+        .setColor(0, 0, 0)
         .setFont("4x6:2")
         .setFontAlign(0, 1, 0)
         .drawString(
@@ -1225,6 +1227,9 @@ class Game {
     //TODO: avoid the big loop ?
     while (true) {
       this.time += 1;
+      if (this.piety < 1000) {
+        this.piety += 1;
+      }
       if (this.time % this.player.stats[REGENERATION] == 0) {
         this.player.hp = Math.min(
           this.player.hp + 1,
@@ -1353,7 +1358,7 @@ setWatch(
 
       let s = game.player.stats;
       let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
-      msg += "dv: " + s[DV] + "\n";
+      msg += "dv: " + s[DV] + "/ ";
       msg += "pv: " + s[PV] + "\n";
       msg += "attack: " + s[ATTACK] + "\n";
       msg += "speed: " + s[SPEED] + "\n";
@@ -1367,8 +1372,11 @@ setWatch(
         "\n";
       msg += "regen:" + s[REGENERATION] + "\n";
       msg += "xp:" + s[XP] + "\n";
-
       E.showMessage(msg);
+      let w = g.getWidth();
+      let h = g.getHeight();
+      g.drawRect(w/4, h-30, w*3/4, h-5);
+      g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
     } else if (game.screen == SHEET_SCREEN) {
       game.screen = MAIN_SCREEN;
       game.display();
@@ -1381,6 +1389,26 @@ setWatch(
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {
+    return;
+  }
+  if (game.screen == SHEET_SCREEN) {
+    game.screen = MAIN_SCREEN;
+    if (game.player.piety < 1000) {
+      game.msg("Your prayer is unheard", "#ffff00");
+    } else {
+      game.player.piety = 0;      
+      if (game.player.satiation == 0) {
+          game.player.satiation = 400;
+          game.msg("You are satiated", "#ffff00");
+      } else {
+        if (game.player.hp < game.player.stats[MAX_HP]) {
+          game.player.hp = game.player.stats[MAX_HP];
+          game.msg("You are healed", "#ffff00");
+        }
+      }
+    }
+    game.display();
+    game.show_msg();
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
