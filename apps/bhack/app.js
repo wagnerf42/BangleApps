@@ -12,6 +12,7 @@ const MAIN_SCREEN = 1;
 const DIED_SCREEN = 2;
 const LEVEL_UP_SCREEN = 3;
 const SHEET_SCREEN = 4;
+const INVENTORY_SCREEN = 5;
 
 const TALENTS = ["Aggressive", "Careful", "Strong"];
 
@@ -520,7 +521,7 @@ class Creature {
         target.dies();
       } else {
         if (target.monster_type == KNIGHT) {
-          game.msg("you are hit(" + damages + ")", "#ff0000");
+          game.msg("you are hit(" + damages + ")", "#ff6000");
         } else {
           game.msg(target.name() + " hit(" + damages + ")", "#00ff00");
         }
@@ -530,7 +531,7 @@ class Creature {
       if (target.monster_type != KNIGHT) {
         game.msg("you miss");
       } else {
-        game.msg(target.name() + " missed");
+        game.msg(this.name() + " misses");
       }
     }
   }
@@ -1353,6 +1354,8 @@ Bangle.on("swipe", () => {
 // button click displays character sheet
 setWatch(
   () => {
+    let w = g.getWidth();
+    let h = g.getHeight();
     if (game.screen == MAIN_SCREEN) {
       game.screen = SHEET_SCREEN;
 
@@ -1373,11 +1376,39 @@ setWatch(
       msg += "regen:" + s[REGENERATION] + "\n";
       msg += "xp:" + s[XP] + "\n";
       E.showMessage(msg);
-      let w = g.getWidth();
-      let h = g.getHeight();
-      g.drawRect(w/4, h-30, w*3/4, h-5);
-      g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
+      if (game.player.hp > 0) {
+        g.drawRect(w/4, h-30, w*3/4, h-5);
+        g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
+      }
     } else if (game.screen == SHEET_SCREEN) {
+        g.clear();
+        g.setColor(0)
+         .setFont("4x6:2")
+         .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 15);
+        // draw body
+        g.setColor("#b7c9e2");
+        g.fillCircle(w/2, 50, 8); // head
+        g.fillEllipse(7*w/16, 65, 9*w/16, 130); // torso
+        g.fillCircle(w/4, 90, 8); // left hand
+        g.fillCircle(3*w/4, 90, 8); // right hand
+        g.fillCircle(7*w/16, 150, 8); // feet
+        g.fillCircle(9*w/16, 150, 8);
+        // draw equiped items
+        let positions = [null, [w/4, 90], [w/2, 50], [w/4,122], [w/2, 150], [3*w/4,90], [w/2, 114], [w/2, 82]];
+        for (let i = 0 ; i <= 7 ; i++) {
+          let item = game.equiped[i];
+          if (item !== null) {
+            let item_tile = item.tile();
+            let image = ITEM_IMAGES[item_tile - 300];
+            let pos = positions[i];
+            g.drawImage(image, pos[0]-16, pos[1]-16);
+          }
+        }
+        // also draw gold
+        g.drawImage(SPECIAL_ITEMS_IMAGES[0], w-32, h-32);
+        g.setColor(0, 0, 0).setFontAlign(1, 0, 0).drawString("" + game.player.gold, w-2, h-40);
+      game.screen = INVENTORY_SCREEN;
+    } else if (game.screen == INVENTORY_SCREEN) {
       game.screen = MAIN_SCREEN;
       game.display();
       game.show_msg();
