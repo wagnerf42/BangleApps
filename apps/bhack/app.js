@@ -7,12 +7,12 @@ const RIGHT = 3;
 const MAP_WIDTH = 5 * 32; // for the banglejs2
 const MAP_HEIGHT = 5 * 32;
 
-const INTRO_SCREEN = 0;
-const MAIN_SCREEN = 1;
-const DIED_SCREEN = 2;
-const LEVEL_UP_SCREEN = 3;
-const SHEET_SCREEN = 4;
-const INVENTORY_SCREEN = 5;
+const MAIN_SCREEN = 0;
+const SHEET_SCREEN = 1;
+const INVENTORY_SCREEN = 2;
+const INTRO_SCREEN = 3;
+const DIED_SCREEN = 4;
+const LEVEL_UP_SCREEN = 5;
 
 const TALENTS = ["Aggressive", "Careful", "Strong", "SwordMaster", "DaggerFreak", "MaceBrute"];
 
@@ -1008,7 +1008,6 @@ class Game {
     }
     this.advance_time();
     this.display();
-    this.show_msg();
   }
   secret_found() {
     let r = this.map.hidden_room;
@@ -1083,6 +1082,8 @@ class Game {
     this.intro_img = null; // let's free some memory ?
   }
   display() {
+    let w = g.getWidth();
+    let h = g.getHeight();
     g.clear();
     if (this.screen == INTRO_SCREEN) {
       g.drawImage(this.intro_img, 0, 0);
@@ -1101,20 +1102,42 @@ class Game {
         contribution = "Gfx";
       }
       g.setColor(0, 0, 0);
-      g.drawString(name, g.getWidth() / 2, (g.getHeight() * 2) / 3);
-      g.drawString(contribution, g.getWidth() / 2, (g.getHeight() * 4) / 5);
+      g.drawString(name, w / 2, (h * 2) / 3);
+      g.drawString(contribution, w / 2, (h * 4) / 5);
       g.setColor(1, 0, 0);
-      g.drawString(name, g.getWidth() / 2 - 1, (g.getHeight() * 2) / 3 - 1);
+      g.drawString(name, w / 2 - 1, (h * 2) / 3 - 1);
       g.drawString(
         contribution,
-        g.getWidth() / 2 - 1,
-        (g.getHeight() * 4) / 5 - 1
+        w / 2 - 1,
+        (h * 4) / 5 - 1
       );
     } else if (this.screen == DIED_SCREEN) {
       game.in_menu = true;
       E.showAlert("you died").then(() => {
         game = new Game();
       });
+    } else if (this.screen == SHEET_SCREEN) {
+      let s = game.player.stats;
+      let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
+      msg += "dv: " + s[DV] + "/ ";
+      msg += "pv: " + s[PV] + "\n";
+      msg += "attack: " + s[ATTACK] + "\n";
+      msg += "speed: " + s[SPEED] + "\n";
+      msg +=
+        "dmg: " +
+        s[DMG_DICES_NUM] +
+        "D" +
+        s[DMG_DICES] +
+        " + " +
+        s[DMG_BONUS] +
+        "\n";
+      msg += "regen:" + s[REGENERATION] + "\n";
+      msg += "xp:" + s[XP] + "\n";
+      E.showMessage(msg);
+      if (game.player.hp > 0) {
+        g.drawRect(w/4, h-30, w*3/4, h-5);
+        g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
+      }
     } else if (this.screen == LEVEL_UP_SCREEN) {
       g
         .setColor(0, 0, 0)
@@ -1122,14 +1145,41 @@ class Game {
         .setFontAlign(0, 1, 0)
         .drawString(
         "level up !\nswipe to unlock",
-        g.getWidth() / 2,
-        g.getHeight() / 2
+        w / 2,
+        h / 2
       );
-      g.flip();
+    } else if (this.screen == INVENTORY_SCREEN) {
+        g.setColor(0)
+         .setFont("4x6:2")
+         .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 15);
+        // draw body
+        g.setColor("#b7c9e2");
+        g.fillCircle(w/2, 50, 8); // head
+        g.fillEllipse(7*w/16, 65, 9*w/16, 130); // torso
+        g.fillCircle(3*w/4, 90, 8); // left hand
+        g.fillCircle(w/4, 90, 8); // right hand
+        g.fillCircle(7*w/16, 150, 8); // feet
+        g.fillCircle(9*w/16, 150, 8);
+        // draw equiped items
+        let positions = [null, [3*w/4, 90], [w/2, 50], [w/4,122], [w/2, 150], [w/4,90], [w/2, 114], [w/2, 82]];
+        for (let i = 0 ; i <= 7 ; i++) {
+          let item = game.equiped[i];
+          if (item !== null) {
+            let item_tile = item.tile();
+            let image = ITEM_IMAGES[item_tile - 300];
+            let pos = positions[i];
+            g.drawImage(image, pos[0]-16, pos[1]-16);
+          }
+        }
+        // also draw gold
+        g.drawImage(SPECIAL_ITEMS_IMAGES[0], w-32, h-32);
+        g.setColor(0, 0, 0).setFontAlign(1, 0, 0).drawString("" + game.player.gold, w-2, h-40);
     } else {
       this.map.display();
       this.display_stats();
+      this.show_msg();
     }
+    g.flip();
   }
   display_stats() {
     let hp_y =
@@ -1257,15 +1307,14 @@ class Game {
       this.advance_time();
     }
     this.display();
-    this.show_msg();
   }
   advance_time() {
     this.locked = true;
     //TODO: avoid the big loop ?
     while (true) {
       this.time += 1;
-      if (this.piety < 1000) {
-        this.piety += 1;
+      if (this.player.piety < 1000) {
+        this.player.piety += 1;
       }
       if (this.time % this.player.stats[REGENERATION] == 0) {
         this.player.hp = Math.min(
@@ -1345,10 +1394,9 @@ function add_talent(talent) {
   game.in_menu = false;
   game.advance_time();
   game.display();
-  game.show_msg();
 }
 
-Bangle.on("swipe", () => {
+Bangle.on("swipe", (direction_lr) => {
   if (game.screen == LEVEL_UP_SCREEN) {
     E.showPrompt(
       "you are now level" +
@@ -1385,78 +1433,20 @@ Bangle.on("swipe", () => {
         game.in_menu = false;
         game.advance_time();
         game.display();
-        game.show_msg();
       }
     });
+  } else {
+    if (game.screen >= MAIN_SCREEN && game.screen <= INVENTORY_SCREEN) {
+      if (direction_lr == -1) {
+        game.screen = (game.screen + 2) % 3;
+        game.display();
+      } else if (direction_lr == 1){
+        game.screen = (game.screen + 1) % 3;
+        game.display();
+      }
+    }
   }
 });
-
-// button click displays character sheet
-setWatch(
-  () => {
-    let w = g.getWidth();
-    let h = g.getHeight();
-    if (game.screen == MAIN_SCREEN) {
-      game.screen = SHEET_SCREEN;
-
-      let s = game.player.stats;
-      let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
-      msg += "dv: " + s[DV] + "/ ";
-      msg += "pv: " + s[PV] + "\n";
-      msg += "attack: " + s[ATTACK] + "\n";
-      msg += "speed: " + s[SPEED] + "\n";
-      msg +=
-        "dmg: " +
-        s[DMG_DICES_NUM] +
-        "D" +
-        s[DMG_DICES] +
-        " + " +
-        s[DMG_BONUS] +
-        "\n";
-      msg += "regen:" + s[REGENERATION] + "\n";
-      msg += "xp:" + s[XP] + "\n";
-      E.showMessage(msg);
-      if (game.player.hp > 0) {
-        g.drawRect(w/4, h-30, w*3/4, h-5);
-        g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
-      }
-    } else if (game.screen == SHEET_SCREEN) {
-        g.clear();
-        g.setColor(0)
-         .setFont("4x6:2")
-         .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 15);
-        // draw body
-        g.setColor("#b7c9e2");
-        g.fillCircle(w/2, 50, 8); // head
-        g.fillEllipse(7*w/16, 65, 9*w/16, 130); // torso
-        g.fillCircle(w/4, 90, 8); // left hand
-        g.fillCircle(3*w/4, 90, 8); // right hand
-        g.fillCircle(7*w/16, 150, 8); // feet
-        g.fillCircle(9*w/16, 150, 8);
-        // draw equiped items
-        let positions = [null, [w/4, 90], [w/2, 50], [w/4,122], [w/2, 150], [3*w/4,90], [w/2, 114], [w/2, 82]];
-        for (let i = 0 ; i <= 7 ; i++) {
-          let item = game.equiped[i];
-          if (item !== null) {
-            let item_tile = item.tile();
-            let image = ITEM_IMAGES[item_tile - 300];
-            let pos = positions[i];
-            g.drawImage(image, pos[0]-16, pos[1]-16);
-          }
-        }
-        // also draw gold
-        g.drawImage(SPECIAL_ITEMS_IMAGES[0], w-32, h-32);
-        g.setColor(0, 0, 0).setFontAlign(1, 0, 0).drawString("" + game.player.gold, w-2, h-40);
-      game.screen = INVENTORY_SCREEN;
-    } else if (game.screen == INVENTORY_SCREEN) {
-      game.screen = MAIN_SCREEN;
-      game.display();
-      game.show_msg();
-    }
-  },
-  BTN1,
-  { repeat: true }
-);
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {
@@ -1479,7 +1469,6 @@ Bangle.on("touch", function (button, xy) {
       }
     }
     game.display();
-    game.show_msg();
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {

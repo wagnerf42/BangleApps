@@ -1,6 +1,9 @@
 pb:
     - overflow messages
     - undefined en prenant armure ?
+    - list of killed monsters
+    - death screen
+    - secrets can block paths
 
 
 ***************
@@ -8,8 +11,6 @@ pb:
 - generateur aleatoire d'objets en fonction du niveau
 
 - il faut penser aux bonus sur les objets
-
-- voir la fiche de perso en cliquant sur le bouton
 
 - balance ideas:
     - the more of the same monster you kill the less xp you get from it
@@ -19,12 +20,6 @@ pb:
     -> armes
     -> armure
     -> bouclier
-
-- xp
-    -> on peut donner un choix binaire de talents
-
-- mort
-    -> liste des trucs tues
 
 - salles speciales
 
