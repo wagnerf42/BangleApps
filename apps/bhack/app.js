@@ -14,7 +14,7 @@ const LEVEL_UP_SCREEN = 3;
 const SHEET_SCREEN = 4;
 const INVENTORY_SCREEN = 5;
 
-const TALENTS = ["Aggressive", "Careful", "Strong"];
+const TALENTS = ["Aggressive", "Careful", "Strong", "SwordMaster", "DaggerFreak", "MaceBrute"];
 
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
@@ -372,19 +372,34 @@ const VALUE = 9;
 const HP = 10;
 const SATIATION = 11;
 const SLOT = 12; // which equipment slot does the item occupy
+const WEAPON_CATEGORY = 13;
+
+// weapon types
+const SWORD_CATEGORY = 1;
+const DAGGER_CATEGORY = 2;
+const MACE_CATEGORY = 3;
+
+// equiped positions
+const LEFT_HAND = 1;
+const HEAD = 2;
+const GAUNTLETS = 3;
+const FEET = 4;
+const RIGHT_HAND = 5;
+const BODY = 6;
+const NECK = 7;
 
 // stats increments for each item
 const ITEMS_STATS = [
-  new Int16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 3]), // leather gauntlet
-  new Int16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
-  new Int16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, 1]), // mace
-  new Int16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, 1]), // elven dagger
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, 4]), // leather boots
-  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, 5]), // small shield
-  new Int16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, 6]), // leather jacket
-  new Int16Array([0, 0, 1, 0, 0, 0, 0, 0, 0, 800, 0, 0, 7]), // stone amulet
+  new Int16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // dagger
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, HEAD, 0]), // leather helmet
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, GAUNTLETS, 0]), // leather gauntlet
+  new Int16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, RIGHT_HAND, SWORD_CATEGORY]), // sword
+  new Int16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, RIGHT_HAND, MACE_CATEGORY]), // mace
+  new Int16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // elven dagger
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, FEET, 0]), // leather boots
+  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, LEFT_HAND, 0]), // small shield
+  new Int16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, BODY, 0]), // leather jacket
+  new Int16Array([0, 0, 1, 0, 0, 0, 0, 0, 0, 800, 0, 0, NECK, 0]), // stone amulet
 ];
 
 const ITEMS = [
@@ -439,6 +454,7 @@ class Creature {
     for (let i = 0; i <= REGENERATION; i++) {
       this.stats[i] += mod * item.stat(i);
     }
+    game.apply_weapon_talent(item, mod);
   }
   treasure() {
     // let's have a 40% change of dropping something
@@ -494,7 +510,7 @@ class Creature {
     game.monsters = game.monsters.filter((m) => m.hp > 0);
     if (this.monster_type == KNIGHT) {
       game.map.set_cell(this.position, TOMBSTONE);
-      game.msg("You die", "#ff0000");
+      game.msg("You die", "#ff6000");
     } else {
       game.map.set_cell(this.position, this.treasure());
       game.msg(this.name() + " dies");
@@ -957,6 +973,26 @@ class Game {
       new_game.display();
     }, 1000);
   }
+  apply_weapon_talent(weapon, modifier) {
+    game.player.talents.find((talent) => {
+      let category = null;
+      if (talent == "SwordMaster") {
+        category = SWORD_CATEGORY;
+      } else if (talent == "DaggerFreak") {
+        category = DAGGER_CATEGORY;
+      } else if (talent == "MaceBrute") {
+        category = MACE_CATEGORY;
+      }
+      if (category !== null) {
+        if (weapon.stat(WEAPON_CATEGORY) == category) {
+          game.player.stats[DMG_BONUS] += 1 * modifier;
+          game.player.stats[ATTACK] += 2 * modifier;
+        }
+        return true;
+      }
+      return false;
+    });
+  }
   rest() {
     this.msg(
       "you rest" + ".".repeat((game.time / game.player.stats[SPEED]) % 3)
@@ -1242,7 +1278,7 @@ class Game {
           let dmg = Math.ceil(this.player.poisoned);
           this.player.hp -= dmg;
           this.player.poisoned -= 0.2 * dmg;
-          this.msg("Poison hits (" + dmg + ")", "#ff0000");
+          this.msg("Poison hits (" + dmg + ")", "#ff6000");
           if (this.player.hp <= 0) {
             this.player.dies();
           }
@@ -1263,7 +1299,7 @@ class Game {
             monster.poisoned -= 0.2 * dmg;
             this.msg(
               "Poison hit " + monster.name() + " (" + dmg + ")",
-              "#ff0000"
+              "#00ff00"
             );
             if (monster.hp <= 0) {
               monster.dies();
@@ -1290,6 +1326,10 @@ let game = new Game();
 function add_talent(talent) {
   E.showMenu();
   game.player.talents.push(talent);
+  let weapon = game.equiped[RIGHT_HAND];
+  if (weapon !== null) {
+    game.apply_weapon_talent(weapon, 1);
+  }
   if (talent == "Aggressive") {
     game.player.stats[ATTACK] += 2;
   } else if (talent == "Strong") {
