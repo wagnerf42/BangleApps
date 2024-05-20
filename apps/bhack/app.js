@@ -515,6 +515,7 @@ class Creature {
       game.map.set_cell(this.position, this.treasure());
       game.msg(this.name() + " dies");
       game.player.add_xp(this.stats[XP]);
+      game.kills[this.monster_type] += 1;
     }
   }
   attack(target) {
@@ -953,6 +954,7 @@ class Item {
 class Game {
   constructor() {
     this.monsters = [];
+    this.kills = new Uint8Array(MONSTERS.length);
     this.items = [];
     this.player = new Creature(KNIGHT);
     this.equiped = [null, null, null, null, null, null, null, null, null];
@@ -1112,10 +1114,15 @@ class Game {
         (h * 4) / 5 - 1
       );
     } else if (this.screen == DIED_SCREEN) {
-      game.in_menu = true;
-      E.showAlert("you died").then(() => {
-        game = new Game();
+      let scroll_height = game.kill_list.length * 18 + h;
+      let frame = Math.floor(getTime() * 20) % scroll_height;
+      game.kill_list.forEach((s, i) => {
+        g.drawString(s, w/2, h + i * 18 - frame);
       });
+      // game.in_menu = true;
+      // E.showAlert("you died").then(() => {
+      //   game = new Game();
+      // });
     } else if (this.screen == SHEET_SCREEN) {
       let s = game.player.stats;
       let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
@@ -1150,8 +1157,8 @@ class Game {
       );
     } else if (this.screen == INVENTORY_SCREEN) {
         g.setColor(0)
-         .setFont("4x6:2")
-         .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 15);
+         .setFont("6x8:2")
+         .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 12);
         // draw body
         g.setColor("#b7c9e2");
         g.fillCircle(w/2, 50, 8); // head
@@ -1472,8 +1479,21 @@ Bangle.on("touch", function (button, xy) {
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
+    game.kill_list = MONSTERS.map((name, index) => {
+      if (game.kills[index] != 0) {
+        return "" + game.kills[index] + " " + name;
+      } else {
+        return null;
+      }
+    }).filter((s) => s !== null);
     game.screen = DIED_SCREEN;
-    game.display();
+    g.setColor(1,1,1);
+    g.setBgColor(0,0,0);
+    g.setFont("6x8:2");
+    g.setFontAlign(0,0,0);
+    game.animate_interval = setInterval(() => {
+      game.display();
+    }, 50);
     return;
   }
   if (game.screen == INTRO_SCREEN) {
@@ -1482,6 +1502,8 @@ Bangle.on("touch", function (button, xy) {
     game.display();
     return;
   } else if (game.screen == DIED_SCREEN) {
+    clearInterval(game.animate_interval);
+    game = new Game();
     return;
   }
   let half_width = g.getWidth() / 2;
