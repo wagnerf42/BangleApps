@@ -112,6 +112,7 @@ const KNIGHT = 1;
 const FLOOR = 100;
 const EXIT = 101;
 const TOMBSTONE = 102;
+const FOUNTAIN = 103;
 const GOLD = 400;
 const CHEST = 403;
 
@@ -221,6 +222,12 @@ const MISC_IMAGES = [
   h.decompress(
     atob(
       "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA"
+    )
+  ),
+  // fountain (img 859)
+  h.decompress(
+    atob(
+      "kEggmqiIAB/4ABAYYEBAAOqB58Rokz/8zAQIDBAoczogRBB54LFBogJCB6INEgABBAQIIDB6wvGB6wqEAwoPUBQdEL5wPLNoQPDH5QPLBYQPFAwYPQIwpPIWwwPqZA1EagoPRCI4NHB58RJIIAIoiOBB5+qCAQoBAQYACBwQPPAIIzCAA8RBwIPP"
     )
   ),
 ];
@@ -681,12 +688,16 @@ class Map {
     }
   }
   fill_special_room(room, monsters) {
-    if (randint(1, 2) == 1) {
+    let choice = randint(1, 3);
+    if (choice == 1) {
       // gold and monsters
       for (let i = 0; i < 3; i++) {
         this.generate_monster(room, monsters);
         this.set_cell(room.random_inner_position(this), GOLD);
       }
+    } else if (choice == 2) {
+      // fountain
+      this.set_cell(room.random_inner_position(this), FOUNTAIN);
     } else {
       // chest
       this.set_cell({ x: room.x + 3, y: room.y + 3 }, CHEST);
@@ -1038,6 +1049,7 @@ class Game {
     this.player.stats[ATTACK] += 1;
     this.in_menu = true;
     this.screen = LEVEL_UP_SCREEN;
+    this.display();
   }
   msg(message, color) {
     // record message to be shown later.
@@ -1148,10 +1160,10 @@ class Game {
     } else if (this.screen == LEVEL_UP_SCREEN) {
       g
         .setColor(0, 0, 0)
-        .setFont("4x6:2")
-        .setFontAlign(0, 1, 0)
+        .setFont("6x8:2")
+        .setFontAlign(0, 0, 0)
         .drawString(
-        "level up !\nswipe to unlock",
+        "level up !\nswipe\nto\nunlock",
         w / 2,
         h / 2
       );
@@ -1225,6 +1237,7 @@ class Game {
     } else {
       this.player.hp -= 1;
     }
+    // console.log("moving on", destination);
     let destination_content = this.map.get_cell(destination);
     if (destination_content < 100) {
       // attack
@@ -1236,6 +1249,26 @@ class Game {
       this.monsters = [];
       this.items = [];
       this.start();
+    } else if (destination_content == FOUNTAIN) {
+      this.in_menu = true;
+      E.showPrompt("The fountain seems cool and refreshing.\n Drink ?").then((d) => {
+        if (d) {
+          let choice = randint(0, 2);
+          if (choice < 2) {
+            game.msg("You feel great !", "#00ff00");
+            game.player.hp = game.player.stats[MAX_HP];
+            game.player.satiation = 400;
+            game.player.poisoned = 0;
+          } else {
+            game.msg("Argh, poison !", "#ff6600");
+            game.player.poisoned = 2; // TODO: level dependent ?
+          }
+          game.msg("The fountain dries up");
+          game.map.set_cell(destination, FLOOR);
+        }
+        game.in_menu = false;
+        game.display();
+      });
     } else if (destination_content == CHEST) {
       if (this.map.chest_opened == false) {
         this.map.chest_opened = true;
@@ -1312,8 +1345,8 @@ class Game {
     }
     if (!this.in_menu) {
       this.advance_time();
+      this.display();
     }
-    this.display();
   }
   advance_time() {
     this.locked = true;
@@ -1444,6 +1477,7 @@ Bangle.on("swipe", (direction_lr) => {
     });
   } else {
     if (game.screen >= MAIN_SCREEN && game.screen <= INVENTORY_SCREEN) {
+      g.setBgColor(1,1,1);
       if (direction_lr == -1) {
         game.screen = (game.screen + 2) % 3;
         game.display();
