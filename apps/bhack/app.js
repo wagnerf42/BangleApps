@@ -7,13 +7,14 @@ const RIGHT = 3;
 const MAP_WIDTH = 5 * 32; // for the banglejs2
 const MAP_HEIGHT = 5 * 32;
 
-const INTRO_SCREEN = 0;
-const MAIN_SCREEN = 1;
-const DIED_SCREEN = 2;
-const LEVEL_UP_SCREEN = 3;
-const SHEET_SCREEN = 4;
+const MAIN_SCREEN = 0;
+const SHEET_SCREEN = 1;
+const INVENTORY_SCREEN = 2;
+const INTRO_SCREEN = 3;
+const DIED_SCREEN = 4;
+const LEVEL_UP_SCREEN = 5;
 
-const TALENTS = ["Aggressive", "Careful", "Strong"];
+const TALENTS = ["Aggressive", "Careful", "Strong", "SwordMaster", "DaggerFreak", "MaceBrute"];
 
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
@@ -111,6 +112,7 @@ const KNIGHT = 1;
 const FLOOR = 100;
 const EXIT = 101;
 const TOMBSTONE = 102;
+const FOUNTAIN = 103;
 const GOLD = 400;
 const CHEST = 403;
 
@@ -220,6 +222,12 @@ const MISC_IMAGES = [
   h.decompress(
     atob(
       "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA"
+    )
+  ),
+  // fountain (img 859)
+  h.decompress(
+    atob(
+      "kEggmqiIAB/4ABAYYEBAAOqB58Rokz/8zAQIDBAoczogRBB54LFBogJCB6INEgABBAQIIDB6wvGB6wqEAwoPUBQdEL5wPLNoQPDH5QPLBYQPFAwYPQIwpPIWwwPqZA1EagoPRCI4NHB58RJIIAIoiOBB5+qCAQoBAQYACBwQPPAIIzCAA8RBwIPP"
     )
   ),
 ];
@@ -371,19 +379,34 @@ const VALUE = 9;
 const HP = 10;
 const SATIATION = 11;
 const SLOT = 12; // which equipment slot does the item occupy
+const WEAPON_CATEGORY = 13;
+
+// weapon types
+const SWORD_CATEGORY = 1;
+const DAGGER_CATEGORY = 2;
+const MACE_CATEGORY = 3;
+
+// equiped positions
+const LEFT_HAND = 1;
+const HEAD = 2;
+const GAUNTLETS = 3;
+const FEET = 4;
+const RIGHT_HAND = 5;
+const BODY = 6;
+const NECK = 7;
 
 // stats increments for each item
 const ITEMS_STATS = [
-  new Int16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, 1]), // dagger
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 2]), // leather helmet
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, 3]), // leather gauntlet
-  new Int16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, 1]), // sword
-  new Int16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, 1]), // mace
-  new Int16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, 1]), // elven dagger
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, 4]), // leather boots
-  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, 5]), // small shield
-  new Int16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, 6]), // leather jacket
-  new Int16Array([0, 0, 1, 0, 0, 0, 0, 0, 0, 800, 0, 0, 7]), // stone amulet
+  new Int16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // dagger
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, HEAD, 0]), // leather helmet
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, GAUNTLETS, 0]), // leather gauntlet
+  new Int16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, RIGHT_HAND, SWORD_CATEGORY]), // sword
+  new Int16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, RIGHT_HAND, MACE_CATEGORY]), // mace
+  new Int16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // elven dagger
+  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, FEET, 0]), // leather boots
+  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, LEFT_HAND, 0]), // small shield
+  new Int16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, BODY, 0]), // leather jacket
+  new Int16Array([0, 0, 1, 0, 0, 0, 0, 0, 0, 800, 0, 0, NECK, 0]), // stone amulet
 ];
 
 const ITEMS = [
@@ -407,6 +430,7 @@ class Creature {
       this.gold = 0;
       this.level = 1;
       this.satiation = 400;
+      this.piety = 1000;
       this.stats = Int16Array(MONSTERS_STATS[monster_type]);
       this.talents = [];
     } else {
@@ -437,6 +461,7 @@ class Creature {
     for (let i = 0; i <= REGENERATION; i++) {
       this.stats[i] += mod * item.stat(i);
     }
+    game.apply_weapon_talent(item, mod);
   }
   treasure() {
     // let's have a 40% change of dropping something
@@ -492,11 +517,12 @@ class Creature {
     game.monsters = game.monsters.filter((m) => m.hp > 0);
     if (this.monster_type == KNIGHT) {
       game.map.set_cell(this.position, TOMBSTONE);
-      game.msg("You die", "#ff0000");
+      game.msg("You die", "#ff6000");
     } else {
       game.map.set_cell(this.position, this.treasure());
       game.msg(this.name() + " dies");
       game.player.add_xp(this.stats[XP]);
+      game.kills[this.monster_type] += 1;
     }
   }
   attack(target) {
@@ -519,7 +545,7 @@ class Creature {
         target.dies();
       } else {
         if (target.monster_type == KNIGHT) {
-          game.msg("you are hit(" + damages + ")", "#ff0000");
+          game.msg("you are hit(" + damages + ")", "#ff6000");
         } else {
           game.msg(target.name() + " hit(" + damages + ")", "#00ff00");
         }
@@ -529,7 +555,7 @@ class Creature {
       if (target.monster_type != KNIGHT) {
         game.msg("you miss");
       } else {
-        game.msg(target.name() + " missed");
+        game.msg(this.name() + " misses");
       }
     }
   }
@@ -626,7 +652,7 @@ class Map {
       this.fill_room(room);
       rooms.push(room);
     }
-    if (this.level % 4 == 0) {
+    if (this.level % 3 == 0) {
       game.msg("You feel", "#00ff00");
       game.msg("something special", "#00ff00");
       let special_room = new Room(width, height, 5, 5);
@@ -662,12 +688,16 @@ class Map {
     }
   }
   fill_special_room(room, monsters) {
-    if (randint(1, 2) == 1) {
+    let choice = randint(1, 3);
+    if (choice == 1) {
       // gold and monsters
       for (let i = 0; i < 3; i++) {
         this.generate_monster(room, monsters);
         this.set_cell(room.random_inner_position(this), GOLD);
       }
+    } else if (choice == 2) {
+      // fountain
+      this.set_cell(room.random_inner_position(this), FOUNTAIN);
     } else {
       // chest
       this.set_cell({ x: room.x + 3, y: room.y + 3 }, CHEST);
@@ -935,6 +965,7 @@ class Item {
 class Game {
   constructor() {
     this.monsters = [];
+    this.kills = new Uint8Array(MONSTERS.length);
     this.items = [];
     this.player = new Creature(KNIGHT);
     this.equiped = [null, null, null, null, null, null, null, null, null];
@@ -955,6 +986,26 @@ class Game {
       new_game.display();
     }, 1000);
   }
+  apply_weapon_talent(weapon, modifier) {
+    game.player.talents.find((talent) => {
+      let category = null;
+      if (talent == "SwordMaster") {
+        category = SWORD_CATEGORY;
+      } else if (talent == "DaggerFreak") {
+        category = DAGGER_CATEGORY;
+      } else if (talent == "MaceBrute") {
+        category = MACE_CATEGORY;
+      }
+      if (category !== null) {
+        if (weapon.stat(WEAPON_CATEGORY) == category) {
+          game.player.stats[DMG_BONUS] += 1 * modifier;
+          game.player.stats[ATTACK] += 2 * modifier;
+        }
+        return true;
+      }
+      return false;
+    });
+  }
   rest() {
     this.msg(
       "you rest" + ".".repeat((game.time / game.player.stats[SPEED]) % 3)
@@ -970,7 +1021,6 @@ class Game {
     }
     this.advance_time();
     this.display();
-    this.show_msg();
   }
   secret_found() {
     let r = this.map.hidden_room;
@@ -999,6 +1049,7 @@ class Game {
     this.player.stats[ATTACK] += 1;
     this.in_menu = true;
     this.screen = LEVEL_UP_SCREEN;
+    this.display();
   }
   msg(message, color) {
     // record message to be shown later.
@@ -1045,6 +1096,8 @@ class Game {
     this.intro_img = null; // let's free some memory ?
   }
   display() {
+    let w = g.getWidth();
+    let h = g.getHeight();
     g.clear();
     if (this.screen == INTRO_SCREEN) {
       g.drawImage(this.intro_img, 0, 0);
@@ -1063,34 +1116,89 @@ class Game {
         contribution = "Gfx";
       }
       g.setColor(0, 0, 0);
-      g.drawString(name, g.getWidth() / 2, (g.getHeight() * 2) / 3);
-      g.drawString(contribution, g.getWidth() / 2, (g.getHeight() * 4) / 5);
+      g.drawString(name, w / 2, (h * 2) / 3);
+      g.drawString(contribution, w / 2, (h * 4) / 5);
       g.setColor(1, 0, 0);
-      g.drawString(name, g.getWidth() / 2 - 1, (g.getHeight() * 2) / 3 - 1);
+      g.drawString(name, w / 2 - 1, (h * 2) / 3 - 1);
       g.drawString(
         contribution,
-        g.getWidth() / 2 - 1,
-        (g.getHeight() * 4) / 5 - 1
+        w / 2 - 1,
+        (h * 4) / 5 - 1
       );
     } else if (this.screen == DIED_SCREEN) {
-      game.in_menu = true;
-      E.showAlert("you died").then(() => {
-        game = new Game();
+      let scroll_height = game.kill_list.length * 18 + h;
+      let frame = Math.floor(getTime() * 20) % scroll_height;
+      game.kill_list.forEach((s, i) => {
+        g.drawString(s, w/2, h + i * 18 - frame);
       });
+      // game.in_menu = true;
+      // E.showAlert("you died").then(() => {
+      //   game = new Game();
+      // });
+    } else if (this.screen == SHEET_SCREEN) {
+      let s = game.player.stats;
+      let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
+      msg += "dv: " + s[DV] + "/ ";
+      msg += "pv: " + s[PV] + "\n";
+      msg += "attack: " + s[ATTACK] + "\n";
+      msg += "speed: " + s[SPEED] + "\n";
+      msg +=
+        "dmg: " +
+        s[DMG_DICES_NUM] +
+        "D" +
+        s[DMG_DICES] +
+        " + " +
+        s[DMG_BONUS] +
+        "\n";
+      msg += "regen:" + s[REGENERATION] + "\n";
+      msg += "xp:" + s[XP] + "\n";
+      E.showMessage(msg);
+      if (game.player.hp > 0) {
+        g.drawRect(w/4, h-30, w*3/4, h-5);
+        g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
+      }
     } else if (this.screen == LEVEL_UP_SCREEN) {
       g
-        .setFont("4x6:2")
-        .setFontAlign(0, 1, 0)
+        .setColor(0, 0, 0)
+        .setFont("6x8:2")
+        .setFontAlign(0, 0, 0)
         .drawString(
-        "level up !\nswipe to unlock",
-        g.getWidth() / 2,
-        g.getHeight() / 2
+        "level up !\nswipe\nto\nunlock",
+        w / 2,
+        h / 2
       );
-      g.flip();
+    } else if (this.screen == INVENTORY_SCREEN) {
+        g.setColor(0)
+         .setFont("6x8:2")
+         .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 12);
+        // draw body
+        g.setColor("#b7c9e2");
+        g.fillCircle(w/2, 50, 8); // head
+        g.fillEllipse(7*w/16, 65, 9*w/16, 130); // torso
+        g.fillCircle(3*w/4, 90, 8); // left hand
+        g.fillCircle(w/4, 90, 8); // right hand
+        g.fillCircle(7*w/16, 150, 8); // feet
+        g.fillCircle(9*w/16, 150, 8);
+        // draw equiped items
+        let positions = [null, [3*w/4, 90], [w/2, 50], [w/4,122], [w/2, 150], [w/4,90], [w/2, 114], [w/2, 82]];
+        for (let i = 0 ; i <= 7 ; i++) {
+          let item = game.equiped[i];
+          if (item !== null) {
+            let item_tile = item.tile();
+            let image = ITEM_IMAGES[item_tile - 300];
+            let pos = positions[i];
+            g.drawImage(image, pos[0]-16, pos[1]-16);
+          }
+        }
+        // also draw gold
+        g.drawImage(SPECIAL_ITEMS_IMAGES[0], w-32, h-32);
+        g.setColor(0, 0, 0).setFontAlign(1, 0, 0).drawString("" + game.player.gold, w-2, h-40);
     } else {
       this.map.display();
       this.display_stats();
+      this.show_msg();
     }
+    g.flip();
   }
   display_stats() {
     let hp_y =
@@ -1129,6 +1237,7 @@ class Game {
     } else {
       this.player.hp -= 1;
     }
+    // console.log("moving on", destination);
     let destination_content = this.map.get_cell(destination);
     if (destination_content < 100) {
       // attack
@@ -1140,6 +1249,26 @@ class Game {
       this.monsters = [];
       this.items = [];
       this.start();
+    } else if (destination_content == FOUNTAIN) {
+      this.in_menu = true;
+      E.showPrompt("The fountain seems cool and refreshing.\n Drink ?").then((d) => {
+        if (d) {
+          let choice = randint(0, 2);
+          if (choice < 2) {
+            game.msg("You feel great !", "#00ff00");
+            game.player.hp = game.player.stats[MAX_HP];
+            game.player.satiation = 400;
+            game.player.poisoned = 0;
+          } else {
+            game.msg("Argh, poison !", "#ff6600");
+            game.player.poisoned = 2; // TODO: level dependent ?
+          }
+          game.msg("The fountain dries up");
+          game.map.set_cell(destination, FLOOR);
+        }
+        game.in_menu = false;
+        game.display();
+      });
     } else if (destination_content == CHEST) {
       if (this.map.chest_opened == false) {
         this.map.chest_opened = true;
@@ -1216,15 +1345,17 @@ class Game {
     }
     if (!this.in_menu) {
       this.advance_time();
+      this.display();
     }
-    this.display();
-    this.show_msg();
   }
   advance_time() {
     this.locked = true;
     //TODO: avoid the big loop ?
     while (true) {
       this.time += 1;
+      if (this.player.piety < 1000) {
+        this.player.piety += 1;
+      }
       if (this.time % this.player.stats[REGENERATION] == 0) {
         this.player.hp = Math.min(
           this.player.hp + 1,
@@ -1236,7 +1367,7 @@ class Game {
           let dmg = Math.ceil(this.player.poisoned);
           this.player.hp -= dmg;
           this.player.poisoned -= 0.2 * dmg;
-          this.msg("Poison hits (" + dmg + ")", "#ff0000");
+          this.msg("Poison hits (" + dmg + ")", "#ff6000");
           if (this.player.hp <= 0) {
             this.player.dies();
           }
@@ -1257,7 +1388,7 @@ class Game {
             monster.poisoned -= 0.2 * dmg;
             this.msg(
               "Poison hit " + monster.name() + " (" + dmg + ")",
-              "#ff0000"
+              "#00ff00"
             );
             if (monster.hp <= 0) {
               monster.dies();
@@ -1284,6 +1415,10 @@ let game = new Game();
 function add_talent(talent) {
   E.showMenu();
   game.player.talents.push(talent);
+  let weapon = game.equiped[RIGHT_HAND];
+  if (weapon !== null) {
+    game.apply_weapon_talent(weapon, 1);
+  }
   if (talent == "Aggressive") {
     game.player.stats[ATTACK] += 2;
   } else if (talent == "Strong") {
@@ -1299,10 +1434,9 @@ function add_talent(talent) {
   game.in_menu = false;
   game.advance_time();
   game.display();
-  game.show_msg();
 }
 
-Bangle.on("swipe", () => {
+Bangle.on("swipe", (direction_lr) => {
   if (game.screen == LEVEL_UP_SCREEN) {
     E.showPrompt(
       "you are now level" +
@@ -1339,53 +1473,61 @@ Bangle.on("swipe", () => {
         game.in_menu = false;
         game.advance_time();
         game.display();
-        game.show_msg();
       }
     });
+  } else {
+    if (game.screen >= MAIN_SCREEN && game.screen <= INVENTORY_SCREEN) {
+      g.setBgColor(1,1,1);
+      if (direction_lr == -1) {
+        game.screen = (game.screen + 2) % 3;
+        game.display();
+      } else if (direction_lr == 1){
+        game.screen = (game.screen + 1) % 3;
+        game.display();
+      }
+    }
   }
 });
-
-// button click displays character sheet
-setWatch(
-  () => {
-    if (game.screen == MAIN_SCREEN) {
-      game.screen = SHEET_SCREEN;
-
-      let s = game.player.stats;
-      let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
-      msg += "dv: " + s[DV] + "\n";
-      msg += "pv: " + s[PV] + "\n";
-      msg += "attack: " + s[ATTACK] + "\n";
-      msg += "speed: " + s[SPEED] + "\n";
-      msg +=
-        "dmg: " +
-        s[DMG_DICES_NUM] +
-        "D" +
-        s[DMG_DICES] +
-        " + " +
-        s[DMG_BONUS] +
-        "\n";
-      msg += "regen:" + s[REGENERATION] + "\n";
-      msg += "xp:" + s[XP] + "\n";
-
-      E.showMessage(msg);
-    } else if (game.screen == SHEET_SCREEN) {
-      game.screen = MAIN_SCREEN;
-      game.display();
-      game.show_msg();
-    }
-  },
-  BTN1,
-  { repeat: true }
-);
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {
     return;
   }
-  if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
-    game.screen = DIED_SCREEN;
+  if (game.screen == SHEET_SCREEN) {
+    game.screen = MAIN_SCREEN;
+    if (game.player.piety < 1000) {
+      game.msg("Your prayer is unheard", "#ffff00");
+    } else {
+      game.player.piety = 0;      
+      if (game.player.satiation == 0) {
+          game.player.satiation = 400;
+          game.msg("You are satiated", "#ffff00");
+      } else {
+        if (game.player.hp < game.player.stats[MAX_HP]) {
+          game.player.hp = game.player.stats[MAX_HP];
+          game.msg("You are healed", "#ffff00");
+        }
+      }
+    }
     game.display();
+    return;
+  }
+  if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
+    game.kill_list = MONSTERS.map((name, index) => {
+      if (game.kills[index] != 0) {
+        return "" + game.kills[index] + " " + name;
+      } else {
+        return null;
+      }
+    }).filter((s) => s !== null);
+    game.screen = DIED_SCREEN;
+    g.setColor(1,1,1);
+    g.setBgColor(0,0,0);
+    g.setFont("6x8:2");
+    g.setFontAlign(0,0,0);
+    game.animate_interval = setInterval(() => {
+      game.display();
+    }, 50);
     return;
   }
   if (game.screen == INTRO_SCREEN) {
@@ -1394,6 +1536,8 @@ Bangle.on("touch", function (button, xy) {
     game.display();
     return;
   } else if (game.screen == DIED_SCREEN) {
+    clearInterval(game.animate_interval);
+    game = new Game();
     return;
   }
   let half_width = g.getWidth() / 2;
