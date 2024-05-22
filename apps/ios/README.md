@@ -9,9 +9,15 @@ prompted for immediatly after you connect the Bangle to the iPhone.
 
 ### Setting
 
-Under `Settings -> Apps -> iOS Integration` there is
-a `Time Sync` setting. This will enable syncing between the
-watch and iOS.
+Under `Settings -> Apps -> iOS Integration` there are some settings:
+
+* `Time Sync` - This will enable syncing between the watch and iOS.
+* `Disable UTF8` - As of version 0.17 of this app, text strings from iOS
+are treated as UTF8. If you install a font library like https://banglejs.com/apps/?id=fontsall
+then the messages app will be able to use that to render characters from iOS. Without fonts
+installed, non-european (ISO8859-1) characters won't be displayed. If `Disable UTF8`
+is true *or no fonts library is installed*, text from iOS is converted to ISO8859-1, and known characters with equivalents
+within that range are converted (so text will display without a font library).
 
 ### Connecting your Bangle.js to your iPhone
 
@@ -28,6 +34,24 @@ for now. It's just a few bucks/pounds/euro's.
 
 If you like to try a free app first, you can always use NRF Toolbox or
 Bluetooth BLE Device Finder to find and connect your Bangle.
+
+### Weather and Calendar
+
+By using the `Shortcuts` app on your phone, you can send weather and calendar data to your watch. This works by sending a notification, which is read by the watch through ANCS. The watch then parses the notification for the data.
+
+While you may write your own shortcuts if you prefer (for example, to get weather from a different source), two are provided:
+
+- Calendar shortcut: https://www.icloud.com/shortcuts/4eac12548b4c424dbcdb1bd58cff338f
+- Weather shortcut: https://www.icloud.com/shortcuts/106c68bfac3746fe9a55761a3be8d092
+
+The weather shortcut requires an OpenWeatherMap api key, which you can get for free from https://openweathermap.org/api. The shortcut will prompt you for this when you add it to your phone.
+
+These shortcuts can also be automated to run periodically, for example every hour, using the `Automation` tab in the Shortcuts app.
+
+The shortcuts will send a notification, which can be annoying. One potential workaround for this would be to create a focus mode, and have an automation:
+- activate the focus mode (hiding notifications from the shortcut)
+- run the shortcut
+- deactivate the focus mode
 
 
 ## Requests
