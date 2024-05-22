@@ -56,6 +56,8 @@ let h = require("heatshrink");
 //     return coordinates_touch(room1[0], room1[2], room2[0], room2[2]) && coordinates_touch(room1[1], room1[3], room2[1], room2[3]);
 // }
 
+const DIED_IMAGE = h.decompress(atob("2FagnMAH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AEEMAf4DWAH4A/AH4A/AAsMAP4BWAH4A/AH4A/AA8MAP4BWAH6ycAf4DVAH6sWAP4BVAH6w/WH4A/V36u/WH4B/WH6uoAAID/AagA/WDIB/AKwA/Vy4ADAoYD/AZyX/WDIB/AKwA/Vy4A/ACyX/V7KyDAf4DRS/6vZAH4AVS/6wbAf4DUAH6uZAH4AU4BbCAa6v/AH4ATS3yv/V+XALoQD/AaKX/V7IA/ACqX/AC/A5gB/AKqX/AC5aCAAIDLAH4AGS/4AXUQIB/AKqX/AC/MAAJcBAf4DSS/4AXLgIB/AKqX/AC6Y/AK6X/AC6Y/AK6X/AC6Y/AK6X/AC/AAAJcBAf4DSS/4AXLgIB/AKqX/AC/AAD56BAeiX/AC5aBAP4BVS/4AX4AA/ACyX/V7PMLoQD/AaKX/V7IA/ACqX/V9fMAf6v/V9wA/AAYA="));
+
 const MONSTERS_IMAGES = [
   undefined,
   // knight (img 340)
@@ -1098,7 +1100,6 @@ class Game {
   display() {
     let w = g.getWidth();
     let h = g.getHeight();
-    g.clear();
     if (this.screen == INTRO_SCREEN) {
       g.drawImage(this.intro_img, 0, 0);
       let frame = Math.floor(getTime() / 4) % 6;
@@ -1126,16 +1127,21 @@ class Game {
         (h * 4) / 5 - 1
       );
     } else if (this.screen == DIED_SCREEN) {
-      let scroll_height = game.kill_list.length * 18 + h;
+      g.drawImage(DIED_IMAGE, 0, 0);
+      let scroll_height = game.epitaph.length * 18 + 90;
       let frame = Math.floor(getTime() * 20) % scroll_height;
-      game.kill_list.forEach((s, i) => {
-        g.drawString(s, w/2, h + i * 18 - frame);
+      game.epitaph.forEach((s, i) => {
+        let height = 90 + i * 18 - frame;
+        if (height < 82) {
+          g.drawString(s, w/2, height);
+        }
       });
       // game.in_menu = true;
       // E.showAlert("you died").then(() => {
       //   game = new Game();
       // });
     } else if (this.screen == SHEET_SCREEN) {
+      g.clear();
       let s = game.player.stats;
       let msg = "hp: " + game.player.hp + " / " + s[MAX_HP] + "\n";
       msg += "dv: " + s[DV] + "/ ";
@@ -1158,6 +1164,7 @@ class Game {
         g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
       }
     } else if (this.screen == LEVEL_UP_SCREEN) {
+      g.clear();
       g
         .setColor(0, 0, 0)
         .setFont("6x8:2")
@@ -1168,6 +1175,7 @@ class Game {
         h / 2
       );
     } else if (this.screen == INVENTORY_SCREEN) {
+      g.clear();
         g.setColor(0)
          .setFont("6x8:2")
          .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 12);
@@ -1194,6 +1202,7 @@ class Game {
         g.drawImage(SPECIAL_ITEMS_IMAGES[0], w-32, h-32);
         g.setColor(0, 0, 0).setFontAlign(1, 0, 0).drawString("" + game.player.gold, w-2, h-40);
     } else {
+      g.clear();
       this.map.display();
       this.display_stats();
       this.show_msg();
@@ -1513,18 +1522,22 @@ Bangle.on("touch", function (button, xy) {
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
-    game.kill_list = MONSTERS.map((name, index) => {
+    let head = ["died level" + game.player.level, "on level" + game.dungeon_level, "you killed", ""]; 
+    let killed = MONSTERS.map((name, index) => {
       if (game.kills[index] != 0) {
         return "" + game.kills[index] + " " + name;
       } else {
         return null;
       }
     }).filter((s) => s !== null);
+    game.epitaph = head.concat(killed);
     game.screen = DIED_SCREEN;
     g.setColor(1,1,1);
     g.setBgColor(0,0,0);
     g.setFont("6x8:2");
     g.setFontAlign(0,0,0);
+    let bottom_image = h.decompress(atob("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"));
+    g.drawImage(bottom_image, 0, 90);
     game.animate_interval = setInterval(() => {
       game.display();
     }, 50);
