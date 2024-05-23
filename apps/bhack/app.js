@@ -13,6 +13,8 @@ const INVENTORY_SCREEN = 2;
 const INTRO_SCREEN = 3;
 const DIED_SCREEN = 4;
 const LEVEL_UP_SCREEN = 5;
+const POTIONS_SCREEN = 10;
+const PRAY_SCREEN = 20;
 
 const TALENTS = ["Aggressive", "Careful", "Strong", "SwordMaster", "DaggerFreak", "MaceBrute"];
 
@@ -116,7 +118,7 @@ const EXIT = 101;
 const TOMBSTONE = 102;
 const FOUNTAIN = 103;
 const GOLD = 400;
-const CHEST = 403;
+const CHEST = 402;
 
 const SPECIAL_ITEMS_IMAGES = [
   // gold (img 786)
@@ -131,16 +133,16 @@ const SPECIAL_ITEMS_IMAGES = [
       "kEggmqiIAM1QPPiImCmYAIogRBB6FVB4RNECAYPSBgIBBs3u913swQDB6EA/8zxAOGGIYPRAYIPBogNDqpYBBgIPR/4wBNgdV7vumfdCIIPWBoMzBwQ6BGQQPPVgQNGGAgPQxAPCCAQsCBoNVfoQPOCIQDBBAIRBBoQOB1QPRJ4WqCAWqBwwPSR4QRBB4INCZ4QPQogQCCIYNDmdEB6ApBogAEBoIFDBwIPPJQQAKGgQPOA="
     )
   ),
-  // life potion (img 664)
-  h.decompress(
-    atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
-    )
-  ),
   // chest (img 586)
   h.decompress(
     atob(
       "kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o="
+    )
+  ),
+  // life potion (img 664)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
     )
   ),
 ];
@@ -435,6 +437,8 @@ class Creature {
       this.piety = 1000;
       this.stats = Int16Array(MONSTERS_STATS[monster_type]);
       this.talents = [];
+      this.potions = [1, 0, 0, 0, 0, 0, 0, 0, 0];
+      this.xp = 0;
     } else {
       this.stats = MONSTERS_STATS[monster_type];
     }
@@ -445,8 +449,8 @@ class Creature {
   }
   add_xp(xp) {
     let next_level_threshold = 1 << (9 + this.level);
-    this.stats[XP] += xp;
-    if (this.stats[XP] >= next_level_threshold) {
+    this.xp += xp;
+    if (this.xp >= next_level_threshold) {
       // we level up
       this.level += 1;
       game.level_up();
@@ -1140,6 +1144,33 @@ class Game {
       // E.showAlert("you died").then(() => {
       //   game = new Game();
       // });
+    } else if (this.screen == POTIONS_SCREEN) {
+      g.setBgColor(1,1,1);
+      g.clear();
+      let cs = h / 3; // cell side
+      let sep = 4;
+      g.setColor(0);
+      g.fillRect(0, cs - sep, 3*cs, cs + sep);
+      g.fillRect(0, 2*cs - sep, 3*cs, 2*cs + sep);
+      g.fillRect(cs - sep, 0, cs + sep, 3*cs);
+      g.fillRect(2*cs - sep, 0, 2*cs + sep, 3*cs);
+      game.player.potions.forEach((potions_number, potion_type) => {
+        if (potions_number > 0) {
+          let cx = (potion_type % 3) * cs;
+          let cy = Math.floor(potion_type / 3) * cs;
+          g.drawImage(SPECIAL_ITEMS_IMAGES[3 + potion_type], cx + cs/2 - 16, cy + cs/2 - 20);
+          g.setFont("6x8:2").setFontAlign(1, 1, 0).drawString("" + potions_number, cx + cs - sep, cy + cs - sep);
+        }
+      });
+    } else if (this.screen == PRAY_SCREEN) {
+      g.clear();
+      g.setColor(0);
+      g.drawRect(w/4, 5, w*3/4, h/2-5);
+      g.setFontAlign(0, 0, 0).drawString("SAVE", w/2, h/4);
+      if (game.player.hp > 0) {
+        g.drawRect(w/4, h/2+5, w*3/4, h-5);
+        g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, 3*h/4);
+      }
     } else if (this.screen == SHEET_SCREEN) {
       g.clear();
       let s = game.player.stats;
@@ -1159,10 +1190,6 @@ class Game {
       msg += "regen:" + s[REGENERATION] + "\n";
       msg += "xp:" + s[XP] + "\n";
       E.showMessage(msg);
-      if (game.player.hp > 0) {
-        g.drawRect(w/4, h-30, w*3/4, h-5);
-        g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, h-17.5);
-      }
     } else if (this.screen == LEVEL_UP_SCREEN) {
       g.clear();
       g
@@ -1244,6 +1271,7 @@ class Game {
     if (this.player.satiation > 0) {
       this.player.satiation -= 1;
     } else {
+      game.msg("You starve", "#ff6600");
       this.player.hp -= 1;
     }
     // console.log("moving on", destination);
@@ -1288,8 +1316,8 @@ class Game {
           game.items.push(loot);
           this.map.set_cell(destination, loot.tile());
         } else {
-          this.msg("You fail opening", "#ff0000");
-          this.msg("the chest", "#ff0000");
+          this.msg("You fail opening", "#ff6600");
+          this.msg("the chest", "#ff6600");
         }
       } else {
         this.msg("You fail again");
@@ -1312,11 +1340,8 @@ class Game {
           this.player.satiation += 200;
           this.player.satiation = Math.min(400, this.player.satiation);
           this.msg("Yum Yum");
-        } else if (destination_content == 402) {
-          let old_hp = this.player.hp;
-          this.player.hp += randint(1, 8);
-          this.player.hp = Math.min(this.player.stats[MAX_HP], this.player.hp);
-          this.msg("Healed " + (this.player.hp - old_hp));
+        } else if (destination_content >= 403) {
+          this.player.potions[destination_content - 403] += 1;
         }
       } else if (destination_content >= 300) {
         // pick item
@@ -1445,7 +1470,7 @@ function add_talent(talent) {
   game.display();
 }
 
-Bangle.on("swipe", (direction_lr) => {
+Bangle.on("swipe", (direction_lr, direction_ud) => {
   if (game.screen == LEVEL_UP_SCREEN) {
     E.showPrompt(
       "you are now level" +
@@ -1495,6 +1520,13 @@ Bangle.on("swipe", (direction_lr) => {
         game.display();
       }
     }
+    if (direction_ud == -1) {
+      game.screen = ((Math.floor(game.screen / 10) + 2) % 3) * 10;
+      game.display();
+    } else if (direction_ud == 1) {
+      game.screen = ((Math.floor(game.screen / 10) + 1) % 3) * 10;
+      game.display();
+    }
   }
 });
 
@@ -1502,23 +1534,49 @@ Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {
     return;
   }
-  if (game.screen == SHEET_SCREEN) {
-    game.screen = MAIN_SCREEN;
-    if (game.player.piety < 1000) {
-      game.msg("Your prayer is unheard", "#ffff00");
-    } else {
-      game.player.piety = 0;      
-      if (game.player.satiation == 0) {
-          game.player.satiation = 400;
-          game.msg("You are satiated", "#ffff00");
+  if (game.screen == PRAY_SCREEN) {
+    let y = Math.floor(xy.y / (g.getWidth() / 2));
+    if (y==1 && game.player.hp > 0) {
+      game.screen = MAIN_SCREEN;
+      if (game.player.piety < 1000) {
+        game.msg("Your prayer is unheard", "#ffff00");
       } else {
-        if (game.player.hp < game.player.stats[MAX_HP]) {
-          game.player.hp = game.player.stats[MAX_HP];
-          game.msg("You are healed", "#ffff00");
+        game.player.piety = 0;      
+        if (game.player.satiation == 0) {
+            game.player.satiation = 400;
+            game.msg("You are satiated", "#ffff00");
+        } else {
+          if (game.player.hp < game.player.stats[MAX_HP]) {
+            game.player.hp = game.player.stats[MAX_HP];
+            game.msg("You are healed", "#ffff00");
+          }
         }
       }
+      game.display();
+      return;
     }
-    game.display();
+  }
+  if (game.screen == POTIONS_SCREEN) {
+    if (game.player.hp == 0) {
+      return;
+    }
+    let side = g.getWidth() / 3;
+    let x = Math.floor(xy.x / side);
+    let y = Math.floor(xy.y / side);
+    let potion = y * 3 + x;
+    if (game.player.potions[potion] != 0) {
+      game.player.potions[potion] -= 1;
+      if (potion == 0) {
+        let old_hp = game.player.hp;
+        game.player.hp += randint(1, 8);
+        game.player.hp = Math.min(game.player.stats[MAX_HP], game.player.hp);
+        game.msg("Healed " + (game.player.hp - old_hp));
+      } else {
+        console.log("todo: potion", potion);
+      }
+      game.screen = MAIN_SCREEN;
+      game.display();
+    }
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
