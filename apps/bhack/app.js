@@ -18,6 +18,8 @@ const PRAY_SCREEN = 20;
 
 const TALENTS = ["Aggressive", "Careful", "Strong", "SwordMaster", "DaggerFreak", "MaceBrute"];
 
+let ANIMATE_INTERVAL = null;
+
 function randint(start, end) {
   return start + Math.floor(Math.random() * (end - start + 1));
 }
@@ -58,7 +60,6 @@ let h = require("heatshrink");
 //     return coordinates_touch(room1[0], room1[2], room2[0], room2[2]) && coordinates_touch(room1[1], room1[3], room2[1], room2[3]);
 // }
 
-const DIED_IMAGE = h.decompress(atob("2FagnMAH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AEEMAf4DWAH4A/AH4A/AAsMAP4BWAH4A/AH4A/AA8MAP4BWAH6ycAf4DVAH6sWAP4BVAH6w/WH4A/V36u/WH4B/WH6uoAAID/AagA/WDIB/AKwA/Vy4ADAoYD/AZyX/WDIB/AKwA/Vy4A/ACyX/V7KyDAf4DRS/6vZAH4AVS/6wbAf4DUAH6uZAH4AU4BbCAa6v/AH4ATS3yv/V+XALoQD/AaKX/V7IA/ACqX/AC/A5gB/AKqX/AC5aCAAIDLAH4AGS/4AXUQIB/AKqX/AC/MAAJcBAf4DSS/4AXLgIB/AKqX/AC6Y/AK6X/AC6Y/AK6X/AC6Y/AK6X/AC/AAAJcBAf4DSS/4AXLgIB/AKqX/AC/AAD56BAeiX/AC5aBAP4BVS/4AX4AA/ACyX/V7PMLoQD/AaKX/V7IA/ACqX/V9fMAf6v/V9wA/AAYA="));
 
 const MONSTERS_IMAGES = [
   undefined,
@@ -118,7 +119,7 @@ const EXIT = 101;
 const TOMBSTONE = 102;
 const FOUNTAIN = 103;
 const GOLD = 400;
-const CHEST = 402;
+const CHEST = 403;
 
 const SPECIAL_ITEMS_IMAGES = [
   // gold (img 786)
@@ -133,16 +134,16 @@ const SPECIAL_ITEMS_IMAGES = [
       "kEggmqiIAM1QPPiImCmYAIogRBB6FVB4RNECAYPSBgIBBs3u913swQDB6EA/8zxAOGGIYPRAYIPBogNDqpYBBgIPR/4wBNgdV7vumfdCIIPWBoMzBwQ6BGQQPPVgQNGGAgPQxAPCCAQsCBoNVfoQPOCIQDBBAIRBBoQOB1QPRJ4WqCAWqBwwPSR4QRBB4INCZ4QPQogQCCIYNDmdEB6ApBogAEBoIFDBwIPPJQQAKGgQPOA="
     )
   ),
-  // chest (img 586)
-  h.decompress(
-    atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o="
-    )
-  ),
   // life potion (img 664)
   h.decompress(
     atob(
       "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
+    )
+  ),
+  // chest (img 586)
+  h.decompress(
+    atob(
+      "kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o="
     )
   ),
 ];
@@ -368,14 +369,14 @@ const MONSTERS = [
 ];
 let MONSTERS_STATS = [
   null,
-  new Int16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0, 0]), // Player
-  new Int16Array([4, 10, 0, 4, 8, 1, 2, 0, 100, 100, 0, 1]), // Newt
-  new Int16Array([6, 10, 0, 8, 10, 1, 3, 0, 100, 150, 0, 1]), // Ant
-  new Int16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 0, 1]), // Wolf
-  new Int16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 0, 1]), // Goblin
-  new Int16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 0, 1]), // Gargoyle
-  new Int16Array([12, 10, 0, 6, 6, 1, 4, 0, 100, 700, 1, 1]), // Spider
-  new Int16Array([20, 12, 1, 12, 6, 1, 8, 0, 100, 800, 0, 1]), // Orc
+  new Uint16Array([10, 10, 0, 4, 6, 1, 4, 0, 100, 0, 0, 0]), // Player
+  new Uint16Array([4, 10, 0, 4, 8, 1, 2, 0, 100, 100, 0, 1]), // Newt
+  new Uint16Array([6, 10, 0, 8, 10, 1, 3, 0, 100, 150, 0, 1]), // Ant
+  new Uint16Array([10, 10, 0, 6, 6, 1, 4, 0, 100, 400, 0, 1]), // Wolf
+  new Uint16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 0, 1]), // Goblin
+  new Uint16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 0, 1]), // Gargoyle
+  new Uint16Array([12, 10, 0, 6, 6, 1, 4, 0, 100, 700, 1, 1]), // Spider
+  new Uint16Array([20, 12, 1, 12, 6, 1, 8, 0, 100, 800, 0, 1]), // Orc
 ];
 
 // types of item stats (on top of monster stats)
@@ -401,16 +402,16 @@ const NECK = 7;
 
 // stats increments for each item
 const ITEMS_STATS = [
-  new Int16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // dagger
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, HEAD, 0]), // leather helmet
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, GAUNTLETS, 0]), // leather gauntlet
-  new Int16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, RIGHT_HAND, SWORD_CATEGORY]), // sword
-  new Int16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, RIGHT_HAND, MACE_CATEGORY]), // mace
-  new Int16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // elven dagger
-  new Int16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, FEET, 0]), // leather boots
-  new Int16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, LEFT_HAND, 0]), // small shield
-  new Int16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, BODY, 0]), // leather jacket
-  new Int16Array([0, 0, 1, 0, 0, 0, 0, 0, 0, 800, 0, 0, NECK, 0]), // stone amulet
+  new Uint16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // dagger
+  new Uint16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, HEAD, 0]), // leather helmet
+  new Uint16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, GAUNTLETS, 0]), // leather gauntlet
+  new Uint16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, RIGHT_HAND, SWORD_CATEGORY]), // sword
+  new Uint16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, RIGHT_HAND, MACE_CATEGORY]), // mace
+  new Uint16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // elven dagger
+  new Uint16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, FEET, 0]), // leather boots
+  new Uint16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, LEFT_HAND, 0]), // small shield
+  new Uint16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, BODY, 0]), // leather jacket
+  new Uint16Array([0, 0, 1, 0, 0, 0, 0, 0, 0, 800, 0, 0, NECK, 0]), // stone amulet
 ];
 
 const ITEMS = [
@@ -435,7 +436,7 @@ class Creature {
       this.level = 1;
       this.satiation = 400;
       this.piety = 1000;
-      this.stats = Int16Array(MONSTERS_STATS[monster_type]);
+      this.stats = Uint16Array(MONSTERS_STATS[monster_type]);
       this.talents = [];
       this.potions = [1, 0, 0, 0, 0, 0, 0, 0, 0];
       this.xp = 0;
@@ -971,12 +972,12 @@ class Item {
 class Game {
   constructor() {
     this.monsters = [];
-    this.kills = new Uint8Array(MONSTERS.length);
+    this.kills = new Uint16Array(MONSTERS.length);
     this.items = [];
     this.player = new Creature(KNIGHT);
     this.equiped = [null, null, null, null, null, null, null, null, null];
     this.screen = INTRO_SCREEN;
-    this.intro_img = require("heatshrink").decompress(
+    TMP_IMG = require("heatshrink").decompress(
       atob(
         "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"
       )
@@ -988,7 +989,7 @@ class Game {
     this.messages = [];
     Bangle.setLocked(false);
     let new_game = this;
-    this.animate_interval = setInterval(() => {
+    ANIMATE_INTERVAL = setInterval(() => {
       new_game.display();
     }, 1000);
   }
@@ -1099,13 +1100,13 @@ class Game {
   start() {
     this.map = new Map(30, 30, this);
     this.screen = MAIN_SCREEN;
-    this.intro_img = null; // let's free some memory ?
+    TMP_IMG = null; // let's free some memory ?
   }
   display() {
     let w = g.getWidth();
     let h = g.getHeight();
     if (this.screen == INTRO_SCREEN) {
-      g.drawImage(this.intro_img, 0, 0);
+      g.drawImage(TMP_IMG, 0, 0);
       let frame = Math.floor(getTime() / 4) % 6;
       g.setFont("4x6:2").setFontAlign(0, 0, 0);
       let name = "";
@@ -1131,7 +1132,7 @@ class Game {
         (h * 4) / 5 - 1
       );
     } else if (this.screen == DIED_SCREEN) {
-      g.drawImage(DIED_IMAGE, 0, 0);
+      g.drawImage(TMP_IMAGE, 0, 0);
       let scroll_height = game.epitaph.length * 18 + 90;
       let frame = Math.floor(getTime() * 20) % scroll_height;
       game.epitaph.forEach((s, i) => {
@@ -1158,7 +1159,7 @@ class Game {
         if (potions_number > 0) {
           let cx = (potion_type % 3) * cs;
           let cy = Math.floor(potion_type / 3) * cs;
-          g.drawImage(SPECIAL_ITEMS_IMAGES[3 + potion_type], cx + cs/2 - 16, cy + cs/2 - 20);
+          g.drawImage(SPECIAL_ITEMS_IMAGES[2 + potion_type], cx + cs/2 - 16, cy + cs/2 - 20);
           g.setFont("6x8:2").setFontAlign(1, 1, 0).drawString("" + potions_number, cx + cs - sep, cy + cs - sep);
         }
       });
@@ -1188,7 +1189,7 @@ class Game {
         s[DMG_BONUS] +
         "\n";
       msg += "regen:" + s[REGENERATION] + "\n";
-      msg += "xp:" + s[XP] + "\n";
+      msg += "xp:" + game.player.xp + "\n";
       E.showMessage(msg);
     } else if (this.screen == LEVEL_UP_SCREEN) {
       g.clear();
@@ -1340,8 +1341,8 @@ class Game {
           this.player.satiation += 200;
           this.player.satiation = Math.min(400, this.player.satiation);
           this.msg("Yum Yum");
-        } else if (destination_content >= 403) {
-          this.player.potions[destination_content - 403] += 1;
+        } else if (destination_content >= 402 && destination_content <= 402) {
+          this.player.potions[destination_content - 402] += 1;
         }
       } else if (destination_content >= 300) {
         // pick item
@@ -1444,7 +1445,41 @@ class Game {
 }
 
 g.setBgColor(0, 0, 0);
-let game = new Game();
+let game = require("Storage").readJSON("bhack.save", true);
+if (game === undefined) {
+  console.log("loading failed");
+  game = new Game();
+} else {
+  console.log("loading succeeded");
+  // put back all classes
+  Object.setPrototypeOf(game, Game.prototype);
+  Object.setPrototypeOf(game.map, Map.prototype);
+  Object.setPrototypeOf(game.player, Creature.prototype);
+  game.items.forEach((i) => {
+    Object.setPrototypeOf(i, Item.prototype);
+  });
+  game.equiped.forEach((i) => {
+    if (i !== null) {
+      Object.setPrototypeOf(i, Item.prototype);
+    }
+  });
+  game.monsters.forEach((m) => {
+    Object.setPrototypeOf(m, Creature.prototype);
+  });
+  game.map.rooms.forEach((r) => {
+    Object.setPrototypeOf(r, Room.prototype);
+  });
+  // reconvert js arrays back to native arrays
+  game.map.map = Uint16Array(game.map.map);
+  game.player.stats = Uint16Array(game.player.stats);
+  game.kills = Uint16Array(game.kills);
+  require("Storage").erase("bhack.save");
+  // back to game
+  game.screen = MAIN_SCREEN;
+  game.locked = false;
+  game.display();
+}
+
 
 function add_talent(talent) {
   E.showMenu();
@@ -1471,6 +1506,9 @@ function add_talent(talent) {
 }
 
 Bangle.on("swipe", (direction_lr, direction_ud) => {
+  if (game.locked) {
+    return;
+  }
   if (game.screen == LEVEL_UP_SCREEN) {
     E.showPrompt(
       "you are now level" +
@@ -1554,6 +1592,12 @@ Bangle.on("touch", function (button, xy) {
       }
       game.display();
       return;
+    } else if (y==0) {
+      console.log("saving");
+      game.locked = true;
+      require("Storage").writeJSON("bhack.save", game);
+      console.log("saved");
+      load();
     }
   }
   if (game.screen == POTIONS_SCREEN) {
@@ -1596,18 +1640,20 @@ Bangle.on("touch", function (button, xy) {
     g.setFontAlign(0,0,0);
     let bottom_image = h.decompress(atob("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"));
     g.drawImage(bottom_image, 0, 90);
-    game.animate_interval = setInterval(() => {
+    TMP_IMAGE = h.decompress(atob("2FagnMAH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AEEMAf4DWAH4A/AH4A/AAsMAP4BWAH4A/AH4A/AA8MAP4BWAH6ycAf4DVAH6sWAP4BVAH6w/WH4A/V36u/WH4B/WH6uoAAID/AagA/WDIB/AKwA/Vy4ADAoYD/AZyX/WDIB/AKwA/Vy4A/ACyX/V7KyDAf4DRS/6vZAH4AVS/6wbAf4DUAH6uZAH4AU4BbCAa6v/AH4ATS3yv/V+XALoQD/AaKX/V7IA/ACqX/AC/A5gB/AKqX/AC5aCAAIDLAH4AGS/4AXUQIB/AKqX/AC/MAAJcBAf4DSS/4AXLgIB/AKqX/AC6Y/AK6X/AC6Y/AK6X/AC6Y/AK6X/AC/AAAJcBAf4DSS/4AXLgIB/AKqX/AC/AAD56BAeiX/AC5aBAP4BVS/4AX4AA/ACyX/V7PMLoQD/AaKX/V7IA/ACqX/V9fMAf6v/V9wA/AAYA="));
+    ANIMATE_INTERVAL = setInterval(() => {
       game.display();
     }, 50);
     return;
   }
   if (game.screen == INTRO_SCREEN) {
-    clearInterval(game.animate_interval);
+    clearInterval(ANIMATE_INTERVAL);
     game.start();
     game.display();
     return;
   } else if (game.screen == DIED_SCREEN) {
-    clearInterval(game.animate_interval);
+    clearInterval(ANIMATE_INTERVAL);
+    TMP_IMAGE = null;
     game = new Game();
     return;
   }
