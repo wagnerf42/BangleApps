@@ -16,7 +16,14 @@ const LEVEL_UP_SCREEN = 5;
 const POTIONS_SCREEN = 10;
 const PRAY_SCREEN = 20;
 
-const TALENTS = ["Aggressive", "Careful", "Strong", "SwordMaster", "DaggerFreak", "MaceBrute"];
+const TALENTS = [
+  "Aggressive",
+  "Careful",
+  "Strong",
+  "SwordMaster",
+  "DaggerFreak",
+  "MaceBrute",
+];
 
 let ANIMATE_INTERVAL = null;
 
@@ -60,56 +67,55 @@ let h = require("heatshrink");
 //     return coordinates_touch(room1[0], room1[2], room2[0], room2[2]) && coordinates_touch(room1[1], room1[3], room2[1], room2[3]);
 // }
 
-
 const MONSTERS_IMAGES = [
   undefined,
   // knight (img 340)
   h.decompress(
     atob(
-      "kEggmqiIACgFEAAIEBBIeqB58RokzmYOBmf/AoIQBAYIVBB6AOCBAIOCGIIPCCgIPRAwJJEHAIPX/4wCAoPdJ4YPX93uGoQACB63dFIXdKoQPVFIVVAAK0BCAIPVAALPDogCBJ4wPPJIILCB4IBBB6xKBegVEJgPdBAIPTSAQGCdwVVN4oPRAAcRNwgPSE4JHBFATtEKoQPP1QLBAAbMCqqXCBwIPPgAQBAAhUFBwIPP"
-    )
+      "kEggmqiIACgFEAAIEBBIeqB58RokzmYOBmf/AoIQBAYIVBB6AOCBAIOCGIIPCCgIPRAwJJEHAIPX/4wCAoPdJ4YPX93uGoQACB63dFIXdKoQPVFIVVAAK0BCAIPVAALPDogCBJ4wPPJIILCB4IBBB6xKBegVEJgPdBAIPTSAQGCdwVVN4oPRAAcRNwgPSE4JHBFATtEKoQPP1QLBAAbMCqqXCBwIPPgAQBAAhUFBwIPP",
+    ),
   ),
   // newt (img 326)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54HEJwoICB6sAqvdAgPdqoQCB6gOBFoYTBCAQPVJIYFBGIIPXCYlVB7ANEOIJPIB6CffBoYOBK4YPTBwlVWYRvGB5wOCAQJLCAIQPVNgIoBFggACB6NEEwQKCeYtEB6GqCAIAKBwIPPgAQBABQOBB54A=="
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54HEJwoICB6sAqvdAgPdqoQCB6gOBFoYTBCAQPVJIYFBGIIPXCYlVB7ANEOIJPIB6CffBoYOBK4YPTBwlVWYRvGB5wOCAQJLCAIQPVNgIoBFggACB6NEEwQKCeYtEB6GqCAIAKBwIPPgAQBABQOBB54A==",
+    ),
   ),
   // ant (img 0)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54JGJwYGCB6YIDgHd93diIHCB6YRDiPu91VqoPUJAgPC7tVF4oPPNg8RFwYPTBgZtCeAgPSRgxNEK4QPQJoqMBPAQPVgH/qotBBAINDN4oPPmYsB/6zDCAYPSIgVVBgoPUohwERYYDCogPQ1QQBAA0AAYQOBB58ACAIAKBwIPP"
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54JGJwYGCB6YIDgHd93diIHCB6YRDiPu91VqoPUJAgPC7tVF4oPPNg8RFwYPTBgZtCeAgPSRgxNEK4QPQJoqMBPAQPVgH/qotBBAINDN4oPPmYsB/6zDCAYPSIgVVBgoPUohwERYYDCogPQ1QQBAA0AAYQOBB58ACAIAKBwIPP",
+    ),
   ),
   // wolf (img 20)
   h.decompress(
     atob(
-      "kEggmqiMAiIAFB4QEB1QPPiNEmcAmYACAgQOBgFECIIPPA4NEBYYSDBoIxCB6AOBAAQ1BB4YKBB6QLCCQQCDA4QPTFIX/BIQyDOYQPRCAP/FIRMBB6orB5gNBZgQPBS4gPR5inCGAILBGQQPUNAIOBdITTGB6BvCCQTPEVgIdCB6AQCNwQGBaITQDB6QOBAgSOCAAYPQUoSoFCoZ6BB5+qJYTMCGIoOCB58ACAIADJQgABBwIPPA"
-    )
+      "kEggmqiMAiIAFB4QEB1QPPiNEmcAmYACAgQOBgFECIIPPA4NEBYYSDBoIxCB6AOBAAQ1BB4YKBB6QLCCQQCDA4QPTFIX/BIQyDOYQPRCAP/FIRMBB6orB5gNBZgQPBS4gPR5inCGAILBGQQPUNAIOBdITTGB6BvCCQTPEVgIdCB6AQCNwQGBaITQDB6QOBAgSOCAAYPQUoSoFCoZ6BB5+qJYTMCGIoOCB58ACAIADJQgABBwIPPA",
+    ),
   ),
   // goblin (img 71)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYACFQIFDAANECIIPPBwndqoQGB6gOCiIPaFoYACB7IABqvM5hRFB6QuB5kAu/d7t3B6wsBFQVmF4NmB65sDJ4hyDB6LrDRwYABK4QPTaAYvBBgSSDB6hQEqpQCf44PNJATwEB6tENooVFogPQ1QQBAAoVEBwIPPgAQBABQOBB54A=="
-    )
+      "kEggmqiIAM1QPPiNEmYACFQIFDAANECIIPPBwndqoQGB6gOCiIPaFoYACB7IABqvM5hRFB6QuB5kAu/d7t3B6wsBFQVmF4NmB65sDJ4hyDB6LrDRwYABK4QPTaAYvBBgSSDB6hQEqpQCf44PNJATwEB6tENooVFogPQ1QQBAAoVEBwIPPgAQBABQOBB54A==",
+    ),
   ),
   // gargoyle (img 42)
   h.decompress(
     atob(
-      "kEggmqiMRA4IDBAgoAB1QPPiNEgFExAqCxAHBmYABogRBB58zBQIBBAAIQGB6YKBBAYWCB6sz5gCC5gtBB7kzOYYPWJ4aIBSwICBB6jJCogLCBgKQDB6IECdQQCBJ4QQCB6gLCGIIHCB6hPCRIgXEB6YQCBwQsCA4YPUR4JQDLIYPSBYP/BQZVFBIIPP1SoDVQYVBu7yC1QPPgAQBAAoVDBwQPPA"
-    )
+      "kEggmqiMRA4IDBAgoAB1QPPiNEgFExAqCxAHBmYABogRBB58zBQIBBAAIQGB6YKBBAYWCB6sz5gCC5gtBB7kzOYYPWJ4aIBSwICBB6jJCogLCBgKQDB6IECdQQCBJ4QQCB6gLCGIIHCB6hPCRIgXEB6YQCBwQsCA4YPUR4JQDLIYPSBYP/BQZVFBIIPP1SoDVQYVBu7yC1QPPgAQBAAoVDBwQPPA",
+    ),
   ),
   // spider (img 95)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54GDgAQIB6ZnBAQQADB6sAogPCKoP/JgIQCB6IMCBwoMCBIIPWBwYuBGAQPSAoJqEAYIICB6QIDFYSTDG4QPTNQaTDB63Mu4OB/4PbJ4V3J4iPEB6CKCCQL1Ff4gPOFgIAB5gUDAYR2BB6GqCAIAKBwIPPgAQBABQOBB54"
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54GDgAQIB6ZnBAQQADB6sAogPCKoP/JgIQCB6IMCBwoMCBIIPWBwYuBGAQPSAoJqEAYIICB6QIDFYSTDG4QPTNQaTDB63Mu4OB/4PbJ4V3J4iPEB6CKCCQL1Ff4gPOFgIAB5gUDAYR2BB6GqCAIAKBwIPPgAQBABQOBB54",
+    ),
   ),
   // orc (img 73)
   h.decompress(
     atob(
-      "kEggmqiIADBgYIE1QPPiNEmYABgEz/8zokRBAQEBB6AOGBYQGBAIIPV/4GBAQRSB/5UCB6YrBKoIODBIIPVBwJoCB7AIDOIKxCB6sAqsA9wGB9wKBB64AFiPdOwQPSAoIlCqvdqo1BCogPSEoN3913u9m1QZEB6BPCFQIvC1QFBL44PNOA3d7rRCeoIPQEYIRBAYQPBCYQIBB6GqEoQACogWDNwWqB58ACAIAFCwgOBB54A="
-    )
+      "kEggmqiIADBgYIE1QPPiNEmYABgEz/8zokRBAQEBB6AOGBYQGBAIIPV/4GBAQRSB/5UCB6YrBKoIODBIIPVBwJoCB7AIDOIKxCB6sAqsA9wGB9wKBB64AFiPdOwQPSAoIlCqvdqo1BCogPSEoN3913u9m1QZEB6BPCFQIvC1QFBL44PNOA3d7rRCeoIPQEYIRBAYQPBCYQIBB6GqEoQACogWDNwWqB58ACAIAFCwgOBB54A=",
+    ),
   ),
 ];
 
@@ -125,26 +131,26 @@ const SPECIAL_ITEMS_IMAGES = [
   // gold (img 786)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYoCmYAGogRBB54OB93/9wQCCooPTBwPdBQIVGB6YADCowPU7ovECogPUAAw/MB5YvDNoY/LB5YADNoYPXF4YTFCAIPSGAhTEOAQPSNYyvJB55rDaYgACB6NEJ4YDEAAVEB6GqCAIAKBwIPPgAQBABQOBB54A=="
-    )
+      "kEggmqiIAM1QPPiNEmYoCmYAGogRBB54OB93/9wQCCooPTBwPdBQIVGB6YADCowPU7ovECogPUAAw/MB5YvDNoY/LB5YADNoYPXF4YTFCAIPSGAhTEOAQPSNYyvJB55rDaYgACB6NEJ4YDEAAVEB6GqCAIAKBwIPPgAQBABQOBB54A==",
+    ),
   ),
   // food (img 660)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiImCmYAIogRBB6FVB4RNECAYPSBgIBBs3u913swQDB6EA/8zxAOGGIYPRAYIPBogNDqpYBBgIPR/4wBNgdV7vumfdCIIPWBoMzBwQ6BGQQPPVgQNGGAgPQxAPCCAQsCBoNVfoQPOCIQDBBAIRBBoQOB1QPRJ4WqCAWqBwwPSR4QRBB4INCZ4QPQogQCCIYNDmdEB6ApBogAEBoIFDBwIPPJQQAKGgQPOA="
-    )
+      "kEggmqiIAM1QPPiImCmYAIogRBB6FVB4RNECAYPSBgIBBs3u913swQDB6EA/8zxAOGGIYPRAYIPBogNDqpYBBgIPR/4wBNgdV7vumfdCIIPWBoMzBwQ6BGQQPPVgQNGGAgPQxAPCCAQsCBoNVfoQPOCIQDBBAIRBBoQOB1QPRJ4WqCAWqBwwPSR4QRBB4INCZ4QPQogQCCIYNDmdEB6ApBogAEBoIFDBwIPPJQQAKGgQPOA=",
+    ),
   ),
   // life potion (img 664)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54="
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54IFJYIHFB60A/4CBB7gACB7QuCAgQPZL8Pd5gPbBwXMqpfLB5sAqvuB4PMiIQDB6wvCGAoPViIPDF5QPOCAgOEB6VECAsABwlEB6GqCAIAKBwIPPgAQBABQOBB54=",
+    ),
   ),
   // chest (img 586)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o="
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54EBgFVJINVAYYCBmYPSgHdiNV7oDDiMA1UAB6IOEE4IOEB6kz1VV9wDCAQIMBB68z7oPFOAIPSBYMA//uRgIGCN4wPOAAP/AQPdAwRvGB5/dY4PuBwIvDN4oPPmYPFWQIPZAAQPZ7rtBZ4KxBJ4QBBCgIPRQoIEBAASMCBwNEB6AFCABFEBwQPPFwItEAAzzDB5o=",
+    ),
   ),
 ];
 
@@ -152,107 +158,107 @@ const ITEM_IMAGES = [
   // dagger (img 411)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP"
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54GDAggAEB6kAB74wJB6v/CBAPVxAQIB6gQFBQgPVCAh1BB7IQCB7wAB7oQDB7ACCqoECB64zFB6dECBIABogPQ1QQBABQOBB58ACAIAKBwIPP",
+    ),
   ),
   // leather helmet (img 465)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPVNooPYgFV7sz7tViIQDB6YOFB4IQDB64ODqoPXCARNCAoIPXAIIPBAgQBCB66MDCgIPYKQR2DB7LUEZ5APOCAoyDB6dEFogAGogPQ1QQBABQOBB58ACAIAKBwIPPA="
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPVNooPYgFV7sz7tViIQDB6YOFB4IQDB64ODqoPXCARNCAoIPXAIIPBAgQBCB66MDCgIPYKQR2DB7LUEZ5APOCAoyDB6dEFogAGogPQ1QQBABQOBB58ACAIAKBwIPPA=",
+    ),
   ),
   // leather gauntlet (img 533)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYADFYIGEogRBB54OFmfdJwQICB6/dqoSDB6gnDB4IRDB6hKEBgQtCAQQPSBYURBwQRDB6oOC1VVGAwPTBQNV7vd1QwDHIQPRBgIQCAgazDB6YMCAAJSBBwYPTNoIJBCIRxCfAQPRdYIDBGQYOEB6VECAIyCqr3CAAVEB6GqCAIABCIIABAwQABBwIPPgAQBABQOBB54A=="
-    )
+      "kEggmqiIAM1QPPiNEmYADFYIGEogRBB54OFmfdJwQICB6/dqoSDB6gnDB4IRDB6hKEBgQtCAQQPSBYURBwQRDB6oOC1VVGAwPTBQNV7vd1QwDHIQPRBgIQCAgazDB6YMCAAJSBBwYPTNoIJBCIRxCfAQPRdYIDBGQYOEB6VECAIyCqr3CAAVEB6GqCAIABCIIABAwQABBwIPPgAQBABQOBB54A==",
+    ),
   ),
   // sword (img 423)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB58zGIQQJB6UAxH/CBIPTmYQKB6QQMB6YQLB6gQCiIQCd4IPXCAtVB7IQE7oPaCAYvLB58ABANV1QwCB7AACGAYPRohQGCYlEB6GqCAIAKBwIPPgAQBABQOBB54"
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB58zGIQQJB6UAxH/CBIPTmYQKB6QQMB6YQLB6gQCiIQCd4IPXCAtVB7IQE7oPaCAYvLB58ABANV1QwCB7AACGAYPRohQGCYlEB6GqCAIAKBwIPPgAQBABQOBB54",
+    ),
   ),
   // mace (img 450)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAGgADCogRBB54MHJwQFCB64KBogODB7AOBAYP/H5YPNJgoFCB6wKBS4ZSCB7AQBOIYPXgFVJYSvKB50A7oqCd4YPVFoTVGB6hqCBw4PTBxYPSUoIOKogPQ1QQBABQOBB58ACAIAKBwIPP"
-    )
+      "kEggmqiIAM1QPPiNEmYAGgADCogRBB54MHJwQFCB64KBogODB7AOBAYP/H5YPNJgoFCB6wKBS4ZSCB7AQBOIYPXgFVJYSvKB50A7oqCd4YPVFoTVGB6hqCBw4PTBxYPSUoIOKogPQ1QQBABQOBB58ACAIAKBwIPP",
+    ),
   ),
   // elven dagger (img 412)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54LIgAEDB7YQDB7MAiIPcBwNEB7YOC1QPYdIQOGB6otIB7AOHB6sAu5RCB7MAswMCB7YLGB6tEBhIABogPQ1QQBABQOBB58ACAIAKBwIPP"
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54LIgAEDB7YQDB7MAiIPcBwNEB7YOC1QPYdIQOGB6otIB7AOHB6sAu5RCB7MAswMCB7YLGB6tEBhIABogPQ1QQBABQOBB58ACAIAKBwIPP",
+    ),
   ),
   // leather boots (img 541)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB58zJQoQGB6MAKImqCAwPSAAwPYAQPdBgICCB6xvBiNVgFVAQIPZ1QMCF5YPSF4JXBB7BPBCAPdGIQRDB6bQBFoQSBWYgPTKAQxCqoyBBQIPTAwTTCCQXdAAIICB59EQwYRCCARWCB6BsBogAENwYVC1QPPRoQAKBwIPPA="
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB58zJQoQGB6MAKImqCAwPSAAwPYAQPdBgICCB6xvBiNVgFVAQIPZ1QMCF5YPSF4JXBB7BPBCAPdGIQRDB6bQBFoQSBWYgPTKAQxCqoyBBQIPTAwTTCCQXdAAIICB59EQwYRCCARWCB6BsBogAENwYVC1QPPRoQAKBwIPPA=",
+    ),
   ),
   // small shield (img 525)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPUNAIKDAogPV7qMD1QPaAgXdiIPZmdVAAQPcFwIPbBgJNBB7YvBiOqB7YvBAASvLB5oQB1QHBBwgPWCAIACBAgPRogHEAA1EB6BJBogAKBwIPPNQYAJBwIPPA=="
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIPUNAIKDAogPV7qMD1QPaAgXdiIPZmdVAAQPcFwIPbBgJNBB7YvBiOqB7YvBAASvLB5oQB1QHBBwgPWCAIACBAgPRogHEAA1EB6BJBogAKBwIPPNQYAJBwIPPA==",
+    ),
   ),
   // leather jacket (img 510)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYABFooICogRBB54ODGgmqCAYPTgERF4vdCAQPSBwNVBINVAIIFBCAQPWBIIRCB6wQBB4QxD7oCBB6gQEKIZ3BB6wADB4IOCB60RJQSUCB6yQFAYJuCB6qPDVwifKB5ZOBWAi/IB5lEKAgACSIUzogPQ1QQBAAKwEAAIIBBwIPPgAQBABQOBB54"
-    )
+      "kEggmqiIAM1QPPiNEmYABFooICogRBB54ODGgmqCAYPTgERF4vdCAQPSBwNVBINVAIIFBCAQPWBIIRCB6wQBB4QxD7oCBB6gQEKIZ3BB6wADB4IOCB60RJQSUCB6yQFAYJuCB6qPDVwifKB5ZOBWAi/IB5lEKAgACSIUzogPQ1QQBAAKwEAAIIBBwIPPgAQBABQOBB54",
+    ),
   ),
   // stone amulet (img 574)
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYACFogHCogRBB54OE7vuAIQQDB6kA9wvECAYPTBAgVEB6gHEOQYvGB6AuEOQRvGB54wEOQY1DB6YxDOYwPVWAoPaRgQP/B7FECAwGEogPQ1QQBABQOBB58ACAIAKBwIPPA"
-    )
+      "kEggmqiIAM1QPPiNEmYACFogHCogRBB54OE7vuAIQQDB6kA9wvECAYPTBAgVEB6gHEOQYvGB6AuEOQRvGB54wEOQY1DB6YxDOYwPVWAoPaRgQP/B7FECAwGEogPQ1QQBABQOBB58ACAIAKBwIPPA",
+    ),
   ),
 ];
 
 const MISC_IMAGES = [
   h.decompress(
     atob(
-      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP/B/4P/B/4P/B6NEBxdEB6GqCAIAKBwIPPgAQBABQOBB54="
-    )
+      "kEggmqiIAM1QPPiNEmYAKogRBB54OLAAIP/B/4P/B/4P/B6NEBxdEB6GqCAIAKBwIPPgAQBABQOBB54=",
+    ),
   ),
   // exit (img 852)
   h.decompress(
     atob(
-      "kEgggjgmYAMB63/AAQPWiIADB4YIEB6WqogvHomqB6WqB4fuBwPuB4eqB6IvBAAQwCmYHDH4gPNAYURGIIPCogICH4YPOAYQPBogPBAYIPBH4oPNMYYABB4IFDP4oPNAgICBF4oKEB6ADBAILODGIQKDB6AAEBwgAKB55vGB7IA4"
-    )
+      "kEgggjgmYAMB63/AAQPWiIADB4YIEB6WqogvHomqB6WqB4fuBwPuB4eqB6IvBAAQwCmYHDH4gPNAYURGIIPCogICH4YPOAYQPBogPBAYIPBH4oPNMYYABB4IFDP4oPNAgICBF4oKEB6ADBAILODGIQKDB6AAEBwgAKB55vGB7IA4",
+    ),
   ),
   // tombstone (img 856)
   h.decompress(
     atob(
-      "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA"
-    )
+      "kEggmqiIACBggIDiOqB58RokzBQMzAAYGDogRBB54HBBQYACAwQCBB6IEBJQQ0BFIIRCAIIPSBoYADCIgPSKIIAGCAQPTohqFAoQJBB6YJBA4QFHB6gBKB6hPGfIQPVJ4wVDB6gBGB61EFAIBFX44POiIJCAAobCB6GqQ4IAKBwIPPgGqGQIAJDoQPOA",
+    ),
   ),
   // fountain (img 859)
   h.decompress(
     atob(
-      "kEggmqiIAB/4ABAYYEBAAOqB58Rokz/8zAQIDBAoczogRBB54LFBogJCB6INEgABBAQIIDB6wvGB6wqEAwoPUBQdEL5wPLNoQPDH5QPLBYQPFAwYPQIwpPIWwwPqZA1EagoPRCI4NHB58RJIIAIoiOBB5+qCAQoBAQYACBwQPPAIIzCAA8RBwIPP"
-    )
+      "kEggmqiIAB/4ABAYYEBAAOqB58Rokz/8zAQIDBAoczogRBB54LFBogJCB6INEgABBAQIIDB6wvGB6wqEAwoPUBQdEL5wPLNoQPDH5QPLBYQPFAwYPQIwpPIWwwPqZA1EagoPRCI4NHB58RJIIAIoiOBB5+qCAQoBAQYACBwQPPAIIzCAA8RBwIPP",
+    ),
   ),
 ];
 
 let HORIZONTAL_BORDER_IMAGE = h.decompress(
   atob(
-    "kEgghC/AD8RAD0zAAQEB///A7VEEggHWogACA4IFDA6p/fPbwHCOZgPSPbIHEf/6Def/4A=="
-  )
+    "kEgghC/AD8RAD0zAAQEB///A7VEEggHWogACA4IFDA6p/fPbwHCOZgPSPbIHEf/6Def/4A==",
+  ),
 );
 let VERTICAL_BORDER_IMAGE = h.decompress(
   atob(
-    "kEgwkCmf/AIdEBoQDBiIDCB+AABB4MzB4YNBAIYPZCIYABB7JNDH5oPEN5APYGIRvKB7QDDB7LfIB57//f/7//f7gA=="
-  )
+    "kEgwkCmf/AIdEBoQDBiIDCB+AABB4MzB4YNBAIYPZCIYABB7JNDH5oPEN5APYGIRvKB7QDDB7LfIB57//f/7//f7gA==",
+  ),
 );
 const BORDER_IMAGES = [
   // ROCK
   h.decompress(
     atob(
-      "kEggmqiIADBogID1QPPiNEmczBQPdAgPdqsAAgNECIIPPBwURBwQQGB6QsCqoQEqoQCB6JLDBQJICqoKBAIQPPgFVJYoCBBgQwBB6IuDBwNENoQOBGQQPQBIItDKIIuDB6bQB7pKBVgYABBwOqB6IEBRIXdohOCFgIOBP4QPPFwItCNo4PQUA4XBB4QvCB6EzaITOEF4czB6NECAQPBGAYOCogPQ1QQBohrEJgQJBAgIPPUYIJBQ4QADBATPCB5w"
-    )
+      "kEggmqiIADBogID1QPPiNEmczBQPdAgPdqsAAgNECIIPPBwURBwQQGB6QsCqoQEqoQCB6JLDBQJICqoKBAIQPPgFVJYoCBBgQwBB6IuDBwNENoQOBGQQPQBIItDKIIuDB6bQB7pKBVgYABBwOqB6IEBRIXdohOCFgIOBP4QPPFwItCNo4PQUA4XBB4QvCB6EzaITOEF4czB6NECAQPBGAYOCogPQ1QQBohrEJgQJBAgIPPUYIJBQ4QADBATPCB5w",
+    ),
   ),
   VERTICAL_BORDER_IMAGE,
   HORIZONTAL_BORDER_IMAGE,
@@ -260,24 +266,24 @@ const BORDER_IMAGES = [
   // **
   h.decompress(
     atob(
-      "kEgggIF1QDCokAiIDCB6oADB7oxDB4IBBB58RABYTDB50zAAURmf//4GDKIYPSogPBAAYGBB6dEAAQPBAoYGBOIYPPN5hxCB6BrFOYZxFB6BsGOI4PQNYhzFOIYPPADzvKA4IFBB6xzIB6DvKA4YPQf74A=="
-    )
+      "kEgggIF1QDCokAiIDCB6oADB7oxDB4IBBB58RABYTDB50zAAURmf//4GDKIYPSogPBAAYGBB6dEAAQPBAoYGBOIYPPN5hxCB6BrFOYZxFB6BsGOI4PQNYhzFOIYPPADzvKA4IFBB6xzIB6DvKA4YPQf74A==",
+    ),
   ),
   HORIZONTAL_BORDER_IMAGE,
   // *
   // **
   h.decompress(
     atob(
-      "kEggkz/4BEBYOqCQoPYAAwPQAAINBAAItGB6tEiIAJB6YEB/4zDmYHGB5oBCEgYACGwIFDB6InCogAEA4YPRNpZvCB6BtFOY4PTNZAPTNoxzHB55tNAAIPPM4RrIA4YPRNZAHEB6JrJBY4PLgBuOB54="
-    )
+      "kEggkz/4BEBYOqCQoPYAAwPQAAINBAAItGB6tEiIAJB6YEB/4zDmYHGB5oBCEgYACGwIFDB6InCogAEA4YPRNpZvCB6BtFOY4PTNZAPTNoxzHB55tNAAIPPM4RrIA4YPRNZAHEB6JrJBY4PLgBuOB54=",
+    ),
   ),
   HORIZONTAL_BORDER_IMAGE,
   //  *
   // ***
   h.decompress(
     atob(
-      "kEgggIF1QCEABIPPAHMRAD0zAAQEB///A7VEEggHWogACA4IFDA6p/fPbwHCOZgPSPbIHEf/6Def/4A="
-    )
+      "kEgggIF1QCEABIPPAHMRAD0zAAQEB///A7VEEggHWogACA4IFDA6p/fPbwHCOZgPSPbIHEf/6Def/4A=",
+    ),
   ),
   VERTICAL_BORDER_IMAGE,
   VERTICAL_BORDER_IMAGE,
@@ -285,24 +291,24 @@ const BORDER_IMAGES = [
   //  *
   h.decompress(
     atob(
-      "kEgggqn1UAiIBEB64ABB6sRAAgtBCIoDCB50zAAVEAIINEAoIDBB99EAAQRCN5APPNocz/4PFCYgPOJoYPFJogPwNoZPHP4oPNNoaPFf44PNFoavHb4wPMNoZPHB6YvCN5gPQJoTvMB5wA=="
-    )
+      "kEgggqn1UAiIBEB64ABB6sRAAgtBCIoDCB50zAAVEAIINEAoIDBB99EAAQRCN5APPNocz/4PFCYgPOJoYPFJogPwNoZPHP4oPNNoaPFf44PNFoavHb4wPMNoZPHB6YvCN5gPQJoTvMB5wA==",
+    ),
   ),
   //  *
   // **
   //  *
   h.decompress(
     atob(
-      "kEgggIF1QDCokAiIDCB6oADB78R1QPBAYIPPiIAECwoPBAYQPOmYACogBBOYgFBAYIPZNoYDBB59EAAQRCB4hxDB55tDmf/B4oTEB5xNDB4ptDAYIPbOIYPPNoZvGd4gPPNoYPFf44PNFgQPGNobfEB5htDV44PTNoYPHOIYPQJoTvMB5wA="
-    )
+      "kEgggIF1QDCokAiIDCB6oADB78R1QPBAYIPPiIAECwoPBAYQPOmYACogBBOYgFBAYIPZNoYDBB59EAAQRCB4hxDB55tDmf/B4oTEB5xNDB4ptDAYIPbOIYPPNoZvGd4gPPNoYPFf44PNFgQPGNobfEB5htDV44PTNoYPHOIYPQJoTvMB5wA=",
+    ),
   ),
 
   // **
   // *
   h.decompress(
     atob(
-      "kEggkRmYADogSIB58z/4BDomqB7AABB4IvLB6+qiIAEB7AqD/4KCB55vFB4dETQgPRAYQPDiIQBAAQPbN4gPYAYQMDB6JvGAYRxDB56vIJ4RxCB7JxFB7ItCeYYPPN5APEZ4YPPZ5IBCB7YDDB54"
-    )
+      "kEggkRmYADogSIB58z/4BDomqB7AABB4IvLB6+qiIAEB7AqD/4KCB55vFB4dETQgPRAYQPDiIQBAAQPbN4gPYAYQMDB6JvGAYRxDB56vIJ4RxCB7JxFB7ItCeYYPPN5APEZ4YPPZ5IBCB7YDDB54",
+    ),
   ),
 
   // *
@@ -310,16 +316,16 @@ const BORDER_IMAGES = [
   // *
   h.decompress(
     atob(
-      "kEggkz/4BDogLB1QSFB7AAGB6AABB4MzB8WqiIAEB7AqD/4KCB55vJDYYPTAYQPDiMAogACB7IDBN4gPabgYPSN4wDCJoIPRV5BvBOIYPZOIoPZFoTTFB5pvIB4jPDB57vIAIYPbAYYPPA=="
-    )
+      "kEggkz/4BDogLB1QSFB7AAGB6AABB4MzB8WqiIAEB7AqD/4KCB55vJDYYPTAYQPDiMAogACB7IDBN4gPabgYPSN4wDCJoIPRV5BvBOIYPZOIoPZFoTTFB5pvIB4jPDB57vIAIYPbAYYPPA==",
+    ),
   ),
 
   // ***
   //  *
   h.decompress(
     atob(
-      "kEgghC/AD8RAAmqBAOqBIoPPmYACogBBFQYIB///BwYPZAAwPLogACAoRpDgALDB55jE/4PFPo4PLJoYPFAYQIBLogPYBQQPPNoZPIOIgPNNoaPFOJAPMJoavIOIQPUJ4xxDB56RDN5IBBB6DCDB4wDDB54="
-    )
+      "kEgghC/AD8RAAmqBAOqBIoPPmYACogBBFQYIB///BwYPZAAwPLogACAoRpDgALDB55jE/4PFPo4PLJoYPFAYQIBLogPYBQQPPNoZPIOIgPNNoaPFOJAPMJoavIOIQPUJ4xxDB56RDN5IBBB6DCDB4wDDB54=",
+    ),
   ),
 
   //  *
@@ -327,8 +333,8 @@ const BORDER_IMAGES = [
   //  *
   h.decompress(
     atob(
-      "kEgggIF1QCEABIPPAHMRAAhPDBIoPPmYACogBBFQYIB///BwYPXAwIAGB5dEAAQFCNIYQBAAwPLMYn/B4p9HB5ZNDB4oDCBAJdEB7BxFB5htDN45xFB5ptDB4pxIB5gsCB4wtCeYYPONoavHOIYPPGAbPIAIQPQYQYPGAYYPPA=="
-    )
+      "kEgggIF1QCEABIPPAHMRAAhPDBIoPPmYACogBBFQYIB///BwYPXAwIAGB5dEAAQFCNIYQBAAwPLMYn/B4p9HB5ZNDB4oDCBAJdEB7BxFB5htDN45xFB5ptDB4pxIB5gsCB4wtCeYYPONoavHOIYPPGAbPIAIQPQYQYPGAYYPPA==",
+    ),
   ),
 ];
 
@@ -402,12 +408,72 @@ const NECK = 7;
 
 // stats increments for each item
 const ITEMS_STATS = [
-  new Uint16Array([0, 0, 0, 2, 0, 0, 0, 0, 0, 200, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // dagger
+  new Uint16Array([
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    0,
+    0,
+    200,
+    0,
+    0,
+    RIGHT_HAND,
+    DAGGER_CATEGORY,
+  ]), // dagger
   new Uint16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, HEAD, 0]), // leather helmet
   new Uint16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 200, 0, 0, GAUNTLETS, 0]), // leather gauntlet
-  new Uint16Array([0, 0, 0, 0, 0, 0, 2, 0, 0, 250, 0, 0, RIGHT_HAND, SWORD_CATEGORY]), // sword
-  new Uint16Array([0, 0, 0, 0, 0, 1, -1, 0, 0, 300, 0, 0, RIGHT_HAND, MACE_CATEGORY]), // mace
-  new Uint16Array([0, 0, 0, 2, 0, 0, 1, 0, 0, 300, 0, 0, RIGHT_HAND, DAGGER_CATEGORY]), // elven dagger
+  new Uint16Array([
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    250,
+    0,
+    0,
+    RIGHT_HAND,
+    SWORD_CATEGORY,
+  ]), // sword
+  new Uint16Array([
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    -1,
+    0,
+    0,
+    300,
+    0,
+    0,
+    RIGHT_HAND,
+    MACE_CATEGORY,
+  ]), // mace
+  new Uint16Array([
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    1,
+    0,
+    0,
+    300,
+    0,
+    0,
+    RIGHT_HAND,
+    DAGGER_CATEGORY,
+  ]), // elven dagger
   new Uint16Array([0, 1, 0, 0, 0, 0, 0, 0, 0, 300, 0, 0, FEET, 0]), // leather boots
   new Uint16Array([0, 2, 0, 0, 0, 0, 0, 0, 0, 400, 0, 0, LEFT_HAND, 0]), // small shield
   new Uint16Array([0, 2, 1, 0, 0, 0, 0, 0, 0, 500, 0, 0, BODY, 0]), // leather jacket
@@ -936,7 +1002,7 @@ class Map {
         g.drawImage(
           IMAGES[image_type][image_number],
           (x + 2) * 32,
-          (y + 2) * 32
+          (y + 2) * 32,
         );
       }
     }
@@ -979,8 +1045,8 @@ class Game {
     this.screen = INTRO_SCREEN;
     TMP_IMG = require("heatshrink").decompress(
       atob(
-        "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"
-      )
+        "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",
+      ),
     );
     this.time = 0;
     this.dungeon_level = 1;
@@ -1015,7 +1081,7 @@ class Game {
   }
   rest() {
     this.msg(
-      "you rest" + ".".repeat((game.time / game.player.stats[SPEED]) % 3)
+      "you rest" + ".".repeat((game.time / game.player.stats[SPEED]) % 3),
     );
     if (this.map.secret !== null) {
       let secret_pos = this.map.secret[1];
@@ -1044,7 +1110,7 @@ class Game {
       Math.max(0, r.x - 2),
       Math.min(this.map.width, r.x + r.width + 2),
       Math.max(0, r.y - 2),
-      Math.min(this.map.height, r.y + r.height + 2)
+      Math.min(this.map.height, r.y + r.height + 2),
     );
     this.msg("Secret found", "#00ff00");
     this.map.secret = null;
@@ -1094,7 +1160,7 @@ class Game {
         }
       },
       400,
-      this.messages
+      this.messages,
     );
   }
   start() {
@@ -1126,11 +1192,7 @@ class Game {
       g.drawString(contribution, w / 2, (h * 4) / 5);
       g.setColor(1, 0, 0);
       g.drawString(name, w / 2 - 1, (h * 2) / 3 - 1);
-      g.drawString(
-        contribution,
-        w / 2 - 1,
-        (h * 4) / 5 - 1
-      );
+      g.drawString(contribution, w / 2 - 1, (h * 4) / 5 - 1);
     } else if (this.screen == DIED_SCREEN) {
       g.drawImage(TMP_IMAGE, 0, 0);
       let scroll_height = game.epitaph.length * 18 + 90;
@@ -1138,7 +1200,7 @@ class Game {
       game.epitaph.forEach((s, i) => {
         let height = 90 + i * 18 - frame;
         if (height < 82) {
-          g.drawString(s, w/2, height);
+          g.drawString(s, w / 2, height);
         }
       });
       // game.in_menu = true;
@@ -1146,31 +1208,37 @@ class Game {
       //   game = new Game();
       // });
     } else if (this.screen == POTIONS_SCREEN) {
-      g.setBgColor(1,1,1);
+      g.setBgColor(1, 1, 1);
       g.clear();
       let cs = h / 3; // cell side
       let sep = 4;
       g.setColor(0);
-      g.fillRect(0, cs - sep, 3*cs, cs + sep);
-      g.fillRect(0, 2*cs - sep, 3*cs, 2*cs + sep);
-      g.fillRect(cs - sep, 0, cs + sep, 3*cs);
-      g.fillRect(2*cs - sep, 0, 2*cs + sep, 3*cs);
+      g.fillRect(0, cs - sep, 3 * cs, cs + sep);
+      g.fillRect(0, 2 * cs - sep, 3 * cs, 2 * cs + sep);
+      g.fillRect(cs - sep, 0, cs + sep, 3 * cs);
+      g.fillRect(2 * cs - sep, 0, 2 * cs + sep, 3 * cs);
       game.player.potions.forEach((potions_number, potion_type) => {
         if (potions_number > 0) {
           let cx = (potion_type % 3) * cs;
           let cy = Math.floor(potion_type / 3) * cs;
-          g.drawImage(SPECIAL_ITEMS_IMAGES[2 + potion_type], cx + cs/2 - 16, cy + cs/2 - 20);
-          g.setFont("6x8:2").setFontAlign(1, 1, 0).drawString("" + potions_number, cx + cs - sep, cy + cs - sep);
+          g.drawImage(
+            SPECIAL_ITEMS_IMAGES[2 + potion_type],
+            cx + cs / 2 - 16,
+            cy + cs / 2 - 20,
+          );
+          g.setFont("6x8:2")
+            .setFontAlign(1, 1, 0)
+            .drawString("" + potions_number, cx + cs - sep, cy + cs - sep);
         }
       });
     } else if (this.screen == PRAY_SCREEN) {
       g.clear();
       g.setColor(0);
-      g.drawRect(w/4, 5, w*3/4, h/2-5);
-      g.setFontAlign(0, 0, 0).drawString("SAVE", w/2, h/4);
+      g.drawRect(w / 4, 5, (w * 3) / 4, h / 2 - 5);
+      g.setFontAlign(0, 0, 0).drawString("SAVE", w / 2, h / 4);
       if (game.player.hp > 0) {
-        g.drawRect(w/4, h/2+5, w*3/4, h-5);
-        g.setFontAlign(0, 0, 0).drawString("PRAY", w/2, 3*h/4);
+        g.drawRect(w / 4, h / 2 + 5, (w * 3) / 4, h - 5);
+        g.setFontAlign(0, 0, 0).drawString("PRAY", w / 2, (3 * h) / 4);
       }
     } else if (this.screen == SHEET_SCREEN) {
       g.clear();
@@ -1193,42 +1261,49 @@ class Game {
       E.showMessage(msg);
     } else if (this.screen == LEVEL_UP_SCREEN) {
       g.clear();
-      g
-        .setColor(0, 0, 0)
+      g.setColor(0, 0, 0)
         .setFont("6x8:2")
         .setFontAlign(0, 0, 0)
-        .drawString(
-        "level up !\nswipe\nto\nunlock",
-        w / 2,
-        h / 2
-      );
+        .drawString("level up !\nswipe\nto\nunlock", w / 2, h / 2);
     } else if (this.screen == INVENTORY_SCREEN) {
       g.clear();
-        g.setColor(0)
-         .setFont("6x8:2")
-         .setFontAlign(0, 0, 0).drawString("Inventory", w/2, 12);
-        // draw body
-        g.setColor("#b7c9e2");
-        g.fillCircle(w/2, 50, 8); // head
-        g.fillEllipse(7*w/16, 65, 9*w/16, 130); // torso
-        g.fillCircle(3*w/4, 90, 8); // left hand
-        g.fillCircle(w/4, 90, 8); // right hand
-        g.fillCircle(7*w/16, 150, 8); // feet
-        g.fillCircle(9*w/16, 150, 8);
-        // draw equiped items
-        let positions = [null, [3*w/4, 90], [w/2, 50], [w/4,122], [w/2, 150], [w/4,90], [w/2, 114], [w/2, 82]];
-        for (let i = 0 ; i <= 7 ; i++) {
-          let item = game.equiped[i];
-          if (item !== null) {
-            let item_tile = item.tile();
-            let image = ITEM_IMAGES[item_tile - 300];
-            let pos = positions[i];
-            g.drawImage(image, pos[0]-16, pos[1]-16);
-          }
+      g.setColor(0)
+        .setFont("6x8:2")
+        .setFontAlign(0, 0, 0)
+        .drawString("Inventory", w / 2, 12);
+      // draw body
+      g.setColor("#b7c9e2");
+      g.fillCircle(w / 2, 50, 8); // head
+      g.fillEllipse((7 * w) / 16, 65, (9 * w) / 16, 130); // torso
+      g.fillCircle((3 * w) / 4, 90, 8); // left hand
+      g.fillCircle(w / 4, 90, 8); // right hand
+      g.fillCircle((7 * w) / 16, 150, 8); // feet
+      g.fillCircle((9 * w) / 16, 150, 8);
+      // draw equiped items
+      let positions = [
+        null,
+        [(3 * w) / 4, 90],
+        [w / 2, 50],
+        [w / 4, 122],
+        [w / 2, 150],
+        [w / 4, 90],
+        [w / 2, 114],
+        [w / 2, 82],
+      ];
+      for (let i = 0; i <= 7; i++) {
+        let item = game.equiped[i];
+        if (item !== null) {
+          let item_tile = item.tile();
+          let image = ITEM_IMAGES[item_tile - 300];
+          let pos = positions[i];
+          g.drawImage(image, pos[0] - 16, pos[1] - 16);
         }
-        // also draw gold
-        g.drawImage(SPECIAL_ITEMS_IMAGES[0], w-32, h-32);
-        g.setColor(0, 0, 0).setFontAlign(1, 0, 0).drawString("" + game.player.gold, w-2, h-40);
+      }
+      // also draw gold
+      g.drawImage(SPECIAL_ITEMS_IMAGES[0], w - 32, h - 32);
+      g.setColor(0, 0, 0)
+        .setFontAlign(1, 0, 0)
+        .drawString("" + game.player.gold, w - 2, h - 40);
     } else {
       g.clear();
       this.map.display();
@@ -1249,18 +1324,18 @@ class Game {
       MAP_WIDTH,
       hp_y,
       MAP_WIDTH + left_width / 2,
-      g.getHeight()
+      g.getHeight(),
     );
     g.setColor(0, 0, 1).fillRect(
       MAP_WIDTH + left_width / 2,
       satiation_y,
       g.getWidth(),
-      g.getHeight()
+      g.getHeight(),
     );
   }
   attack(position) {
     let monster = this.monsters.find(
-      (m) => m.position.x == position.x && m.position.y == position.y
+      (m) => m.position.x == position.x && m.position.y == position.y,
     );
     return this.player.attack(monster);
   }
@@ -1289,24 +1364,26 @@ class Game {
       this.start();
     } else if (destination_content == FOUNTAIN) {
       this.in_menu = true;
-      E.showPrompt("The fountain seems cool and refreshing.\n Drink ?").then((d) => {
-        if (d) {
-          let choice = randint(0, 2);
-          if (choice < 2) {
-            game.msg("You feel great !", "#00ff00");
-            game.player.hp = game.player.stats[MAX_HP];
-            game.player.satiation = 400;
-            game.player.poisoned = 0;
-          } else {
-            game.msg("Argh, poison !", "#ff6600");
-            game.player.poisoned = 2; // TODO: level dependent ?
+      E.showPrompt("The fountain seems cool and refreshing.\n Drink ?").then(
+        (d) => {
+          if (d) {
+            let choice = randint(0, 2);
+            if (choice < 2) {
+              game.msg("You feel great !", "#00ff00");
+              game.player.hp = game.player.stats[MAX_HP];
+              game.player.satiation = 400;
+              game.player.poisoned = 0;
+            } else {
+              game.msg("Argh, poison !", "#ff6600");
+              game.player.poisoned = 2; // TODO: level dependent ?
+            }
+            game.msg("The fountain dries up");
+            game.map.set_cell(destination, FLOOR);
           }
-          game.msg("The fountain dries up");
-          game.map.set_cell(destination, FLOOR);
-        }
-        game.in_menu = false;
-        game.display();
-      });
+          game.in_menu = false;
+          game.display();
+        },
+      );
     } else if (destination_content == CHEST) {
       if (this.map.chest_opened == false) {
         this.map.chest_opened = true;
@@ -1347,7 +1424,7 @@ class Game {
       } else if (destination_content >= 300) {
         // pick item
         let item_index = this.items.findIndex(
-          (i) => i.position.x == destination.x && i.position.y == destination.y
+          (i) => i.position.x == destination.x && i.position.y == destination.y,
         );
         let item = this.items[item_index];
         this.items.splice(item_index, item_index);
@@ -1394,7 +1471,7 @@ class Game {
       if (this.time % this.player.stats[REGENERATION] == 0) {
         this.player.hp = Math.min(
           this.player.hp + 1,
-          this.player.stats[MAX_HP]
+          this.player.stats[MAX_HP],
         );
       }
       if (this.time % 20 == 0) {
@@ -1423,7 +1500,7 @@ class Game {
             monster.poisoned -= 0.2 * dmg;
             this.msg(
               "Poison hit " + monster.name() + " (" + dmg + ")",
-              "#00ff00"
+              "#00ff00",
             );
             if (monster.hp <= 0) {
               monster.dies();
@@ -1434,7 +1511,7 @@ class Game {
       if (this.time % 300 == 0) {
         this.map.generate_monster(
           this.map.rooms[randint(0, this.map.rooms.length - 1)],
-          this.monsters
+          this.monsters,
         );
       }
       if (this.time % this.player.stats[SPEED] == 0) {
@@ -1480,7 +1557,6 @@ if (game === undefined) {
   game.display();
 }
 
-
 function add_talent(talent) {
   E.showMenu();
   game.player.talents.push(talent);
@@ -1517,7 +1593,7 @@ Bangle.on("swipe", (direction_lr, direction_ud) => {
         game.player.stats[MAX_HP] +
         "\nattack: " +
         game.player.stats[ATTACK],
-      { title: "Level Up!", buttons: { Ok: 0 } }
+      { title: "Level Up!", buttons: { Ok: 0 } },
     ).then(() => {
       if (
         game.player.level % 2 == 0 &&
@@ -1549,21 +1625,24 @@ Bangle.on("swipe", (direction_lr, direction_ud) => {
     });
   } else {
     if (game.screen >= MAIN_SCREEN && game.screen <= INVENTORY_SCREEN) {
-      g.setBgColor(1,1,1);
+      g.setBgColor(1, 1, 1);
       if (direction_lr == -1) {
         game.screen = (game.screen + 2) % 3;
         game.display();
-      } else if (direction_lr == 1){
+      } else if (direction_lr == 1) {
         game.screen = (game.screen + 1) % 3;
         game.display();
       }
     }
-    if (direction_ud == -1) {
-      game.screen = ((Math.floor(game.screen / 10) + 2) % 3) * 10;
-      game.display();
-    } else if (direction_ud == 1) {
-      game.screen = ((Math.floor(game.screen / 10) + 1) % 3) * 10;
-      game.display();
+    if (game.screen % 10 == 0) {
+      // if we are in a vertical screen
+      if (direction_ud == -1) {
+        game.screen = ((Math.floor(game.screen / 10) + 2) % 3) * 10;
+        game.display();
+      } else if (direction_ud == 1) {
+        game.screen = ((Math.floor(game.screen / 10) + 1) % 3) * 10;
+        game.display();
+      }
     }
   }
 });
@@ -1574,15 +1653,15 @@ Bangle.on("touch", function (button, xy) {
   }
   if (game.screen == PRAY_SCREEN) {
     let y = Math.floor(xy.y / (g.getWidth() / 2));
-    if (y==1 && game.player.hp > 0) {
+    if (y == 1 && game.player.hp > 0) {
       game.screen = MAIN_SCREEN;
       if (game.player.piety < 1000) {
         game.msg("Your prayer is unheard", "#ffff00");
       } else {
-        game.player.piety = 0;      
+        game.player.piety = 0;
         if (game.player.satiation == 0) {
-            game.player.satiation = 400;
-            game.msg("You are satiated", "#ffff00");
+          game.player.satiation = 400;
+          game.msg("You are satiated", "#ffff00");
         } else {
           if (game.player.hp < game.player.stats[MAX_HP]) {
             game.player.hp = game.player.stats[MAX_HP];
@@ -1592,7 +1671,7 @@ Bangle.on("touch", function (button, xy) {
       }
       game.display();
       return;
-    } else if (y==0) {
+    } else if (y == 0) {
       console.log("saving");
       game.locked = true;
       require("Storage").writeJSON("bhack.save", game);
@@ -1624,7 +1703,12 @@ Bangle.on("touch", function (button, xy) {
     return;
   }
   if (game.screen == MAIN_SCREEN && game.player.hp <= 0) {
-    let head = ["died level" + game.player.level, "on level" + game.dungeon_level, "you killed", ""]; 
+    let head = [
+      "died level" + game.player.level,
+      "on level" + game.dungeon_level,
+      "you killed",
+      "",
+    ];
     let killed = MONSTERS.map((name, index) => {
       if (game.kills[index] != 0) {
         return "" + game.kills[index] + " " + name;
@@ -1634,13 +1718,21 @@ Bangle.on("touch", function (button, xy) {
     }).filter((s) => s !== null);
     game.epitaph = head.concat(killed);
     game.screen = DIED_SCREEN;
-    g.setColor(1,1,1);
-    g.setBgColor(0,0,0);
+    g.setColor(1, 1, 1);
+    g.setBgColor(0, 0, 0);
     g.setFont("6x8:2");
-    g.setFontAlign(0,0,0);
-    let bottom_image = h.decompress(atob("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"));
+    g.setFontAlign(0, 0, 0);
+    let bottom_image = h.decompress(
+      atob(
+        "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",
+      ),
+    );
     g.drawImage(bottom_image, 0, 90);
-    TMP_IMAGE = h.decompress(atob("2FagnMAH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AEEMAf4DWAH4A/AH4A/AAsMAP4BWAH4A/AH4A/AA8MAP4BWAH6ycAf4DVAH6sWAP4BVAH6w/WH4A/V36u/WH4B/WH6uoAAID/AagA/WDIB/AKwA/Vy4ADAoYD/AZyX/WDIB/AKwA/Vy4A/ACyX/V7KyDAf4DRS/6vZAH4AVS/6wbAf4DUAH6uZAH4AU4BbCAa6v/AH4ATS3yv/V+XALoQD/AaKX/V7IA/ACqX/AC/A5gB/AKqX/AC5aCAAIDLAH4AGS/4AXUQIB/AKqX/AC/MAAJcBAf4DSS/4AXLgIB/AKqX/AC6Y/AK6X/AC6Y/AK6X/AC6Y/AK6X/AC/AAAJcBAf4DSS/4AXLgIB/AKqX/AC/AAD56BAeiX/AC5aBAP4BVS/4AX4AA/ACyX/V7PMLoQD/AaKX/V7IA/ACqX/V9fMAf6v/V9wA/AAYA="));
+    TMP_IMAGE = h.decompress(
+      atob(
+        "2FagnMAH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AH4A/AEEMAf4DWAH4A/AH4A/AAsMAP4BWAH4A/AH4A/AA8MAP4BWAH6ycAf4DVAH6sWAP4BVAH6w/WH4A/V36u/WH4B/WH6uoAAID/AagA/WDIB/AKwA/Vy4ADAoYD/AZyX/WDIB/AKwA/Vy4A/ACyX/V7KyDAf4DRS/6vZAH4AVS/6wbAf4DUAH6uZAH4AU4BbCAa6v/AH4ATS3yv/V+XALoQD/AaKX/V7IA/ACqX/AC/A5gB/AKqX/AC5aCAAIDLAH4AGS/4AXUQIB/AKqX/AC/MAAJcBAf4DSS/4AXLgIB/AKqX/AC6Y/AK6X/AC6Y/AK6X/AC6Y/AK6X/AC/AAAJcBAf4DSS/4AXLgIB/AKqX/AC/AAD56BAeiX/AC5aBAP4BVS/4AX4AA/ACyX/V7PMLoQD/AaKX/V7IA/ACqX/V9fMAf6v/V9wA/AAYA=",
+      ),
+    );
     ANIMATE_INTERVAL = setInterval(() => {
       game.display();
     }, 50);
@@ -1657,6 +1749,11 @@ Bangle.on("touch", function (button, xy) {
     game = new Game();
     return;
   }
+
+  if (game.screen != MAIN_SCREEN) {
+    return;
+  }
+
   let half_width = g.getWidth() / 2;
   let half_height = g.getHeight() / 2;
   let directions_amplitudes = [0, 0, 0, 0];
