@@ -72,7 +72,9 @@ const FIRST_MISC = 35;
 const VOID = 38;
 
 const ROCK = 1;
-const SHAPES = Uint8Array([0, 1, 2, 5, 1, 1, 3, 10, 9, 6, 2, 7, 4, 9, 8, 11]);
+// a wall tile has 15 possible configurations but only 12 possible images
+// this array tells which configuration is using which image
+const SHAPES = Uint8Array([0, 1, 2, 5, 1, 1, 3, 10, 2, 6, 2, 7, 4, 9, 8, 11]);
 
 const KNIGHT = FIRST_MONSTER;
 
@@ -627,6 +629,14 @@ class Map {
         if (map[p] < ROCK || map[p] >= FIRST_MONSTER) {
           continue;
         }
+        // we can compute the border shape by looking at
+        // neighbour tiles if they are filled or empty
+        // we just sum the weighted bits to compute an integer
+        // telling us which shape we should put
+        //    1
+        // 8 tile 2
+        //    4
+        // for example 15 is a cross and 14 is 'T'
         let border_type = 0;
         if (map[p - w] >= ROCK && map[p - w] < FIRST_MONSTER) {
           border_type += 1;
@@ -641,6 +651,9 @@ class Map {
           border_type += 4;
         }
         // now get the tile index
+        // since some images appear twice (8 is '-' as is 2)
+        // but the images are stored only once we need an extra SHAPES array
+        // to get the image index 
         map[p] = ROCK + SHAPES[border_type];
       }
     }
