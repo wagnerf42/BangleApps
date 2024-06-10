@@ -11,7 +11,7 @@ def generate(ids, filename):
 def main():
     monsters = [340, 326, 0, 20, 71, 42, 95, 73]
     generate(monsters, "monsters.png")
-    special_items = [786, 660, 664, 672, 586]
+    special_items = [786, 660, 664, 672, 274, 586]
     generate(special_items, "special_items.png")
     items = [411, 465, 533, 423, 450, 412, 541, 525, 510, 574]
     generate(items, "items.png")

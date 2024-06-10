@@ -6,5 +6,6 @@ pkgs.mkShell {
     nodePackages.typescript-language-server
     nodejs
     nodePackages.typescript
+    python3
   ];
 }
