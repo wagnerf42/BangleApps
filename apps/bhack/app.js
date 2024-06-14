@@ -13,6 +13,7 @@ const INVENTORY_SCREEN = 2;
 const INTRO_SCREEN = 3;
 const DIED_SCREEN = 4;
 const LEVEL_UP_SCREEN = 5;
+const MERCHANT_SCREEN = 6;
 const POTIONS_SCREEN = 10;
 const PRAY_SCREEN = 20;
 
@@ -476,6 +477,12 @@ class Map {
       this.fill_room(room);
       rooms.push(room);
     }
+    
+    // first, place the exit somewhere not near a wall.
+    // we place it first to be 100% sure it is a free space.
+    let last_room = rooms[rooms.length - 1];
+    this.set_cell(last_room.random_inner_position(this), EXIT);
+    
     if (this.level % 2 == 0) {
       game.msg("You feel", "#00ff00");
       game.msg("something special", "#00ff00");
@@ -486,11 +493,6 @@ class Map {
     }
     this.generate_corridors(rooms);
     this.fill_borders();
-
-    // first, place the exit somewhere not near a wall.
-    // we place it first to be 100% sure it is a free space.
-    let last_room = rooms[rooms.length - 1];
-    this.set_cell(last_room.random_inner_position(this), EXIT);
 
     let first_room = rooms[0];
     game.player.position = first_room.random_free_position(this);
@@ -515,7 +517,7 @@ class Map {
     let choice = randint(1, 4);
     if (choice == 1) {
       // gold and monsters
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         this.generate_monster(room, monsters);
         this.set_cell(room.random_inner_position(this), GOLD);
       }
@@ -524,6 +526,10 @@ class Map {
       this.set_cell(room.random_inner_position(this), FOUNTAIN);
     } else if (choice == 3) {
       this.set_cell(room.random_inner_position(this), MERCHANT);
+      game.merchant_items = [];
+      for(let i=0 ; i < ITEMS.length ; i++) {
+        game.merchant_items.push(new Item(i));
+      }
     } else {
       // chest
       this.set_cell({ x: room.x + 3, y: room.y + 3 }, CHEST);
@@ -797,6 +803,7 @@ class Item {
 class Game {
   constructor() {
     this.monsters = [];
+    this.merchant_items = [];
     this.kills = new Uint16Array(MONSTERS.length);
     this.items = [];
     this.player = new Creature(0);
@@ -988,6 +995,47 @@ class Game {
             .drawString("" + potions_number, cx + cs - sep, cy + cs - sep);
         }
       });
+    } else if (this.screen == MERCHANT_SCREEN) {
+      let rarrow = Graphics.createImage(`
+   #
+    #    
+######        
+#######
+######                
+    #
+   #                      
+      `);
+
+      let larrow = Graphics.createImage(`
+   #
+  #    
+ ######       
+#######
+ ######               
+  #
+   #                      
+      `);
+      g.setBgColor(255, 255, 255);
+      g.clear();
+      g.setColor(0);
+      let item = game.merchant_items[0];
+      let price = item.stat(VALUE);
+      g.setFont("4x6:2").setFontAlign(0, -1, 0);
+      g.drawString(item.name(), w/2, 4);
+      g.drawString("for " + price + " gold", w/2, 22);
+      g.drawImage(TILES, w/2 - 32, 40, {frame: item.tile(), scale: 2.0});
+      g.drawImage(rarrow, w/2 + 45, 60, {scale:4});
+      g.drawImage(larrow, w/2 - 73, 60, {scale:4});
+      g.drawRect(5, 110, w/2-5, h-30);
+      g.drawRect(w/2+5, 110, w-5, h-30);
+      g.setFontAlign(0, 0, 0);
+      g.drawString("Gold left: "+game.player.gold, w/2, h-14);
+      g.setFont("6x8:2");
+      g.drawString("bye", 3*w/4, (110+h-30)/2);
+      if (price > this.player.gold || game.equiped[item.stat(SLOT)] !== null) {
+        g.setColor(0.7, 0.7, 0.7);
+      }
+      g.drawString("buy", w/4, (110+h-30)/2);
     } else if (this.screen == PRAY_SCREEN) {
       g.clear();
       g.setColor(0);
@@ -1148,7 +1196,13 @@ class Game {
         }
       );
     } else if (destination_content == MERCHANT) {
-      console.log("TODO: merchant");
+      if (this.merchant_items.length == 0) {
+        this.msg("Sorry, nothing left");
+      } else {
+        this.screen = MERCHANT_SCREEN;
+      }
+      this.display();
+      return;
     } else if (destination_content == CHEST) {
       if (this.map.chest_opened == false) {
         this.map.chest_opened = true;
@@ -1179,7 +1233,7 @@ class Game {
         // special item
         if (destination_content == GOLD) {
           // gold
-          let amount = randint(1, 10) * this.dungeon_level;
+          let amount = randint(5, 10) * this.dungeon_level;
           this.player.gold += amount;
           this.msg("" + amount + " gold");
         } else if (destination_content == FIRST_SPECIAL + 1) {
@@ -1359,6 +1413,23 @@ Bangle.on("swipe", (direction_lr, direction_ud) => {
   if (game.locked) {
     return;
   }
+  if (game.screen == MERCHANT_SCREEN) {
+    if (game.merchant_items.length == 0) {
+      return;
+    }
+    if (direction_lr == -1) {
+      let i = game.merchant_items.pop();
+      game.merchant_items.unshift(i);
+      game.display();
+      return;
+    }
+    if (direction_lr == 1) {
+      let i = game.merchant_items.shift();
+      game.merchant_items.push(i);
+      game.display();
+      return;
+    }
+  }
   if (game.screen == LEVEL_UP_SCREEN) {
     E.showPrompt(
       "you are now level" +
@@ -1423,6 +1494,31 @@ Bangle.on("swipe", (direction_lr, direction_ud) => {
 
 Bangle.on("touch", function (button, xy) {
   if (game.locked || game.in_menu || game.screen == LEVEL_UP_SCREEN) {
+    return;
+  }
+  if (game.screen == MERCHANT_SCREEN) {
+    if (xy.y > g.getHeight()/2) {
+      if (xy.x < g.getWidth()/2) {
+        let item = game.merchant_items[0];
+        let price = item.stat(VALUE);
+        let slot = item.stat(SLOT);
+        if (game.player.gold >= price && game.equiped[slot] === null) {
+          game.player.gold -= price;
+          let item = game.merchant_items.shift();
+          if (game.merchant_items.length == 0) {
+            game.screen = MAIN_SCREEN;
+          }
+          game.equiped[slot] = item;
+          game.player.item_effect(item, true);
+          game.display();
+        }
+        return;
+      } else {
+        game.screen = MAIN_SCREEN;
+        game.msg("Thanks !");
+        game.display();
+      }
+    }
     return;
   }
   if (game.screen == PRAY_SCREEN) {
