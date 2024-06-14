@@ -68,7 +68,7 @@ class CSCSensor {
   }
 
   updateScreenRevs() {
-    var dist = this.distFactor*(this.lastRevs-this.lastRevsStart)*csc.settings.circum/63360.0;
+    var dist = this.distFactor*(this.lastRevs-this.lastRevsStart) * csc.settings.circum/*mm*/ / 1000000;
     var ddist = Math.round(100*dist)/100;
     var tdist = Math.round(this.distFactor*this.totaldist*10)/10;
     var dspeed = Math.round(10*this.distFactor*this.speed)/10;
@@ -157,7 +157,7 @@ csc.on("data", e => {
   mySensor.movingTime += e.wdt;
   if (mySensor.speed>mySensor.maxSpeed && (mySensor.movingTime>3 || mySensor.speed<20) && mySensor.speed<50)
     mySensor.maxSpeed = mySensor.speed;
-  mySensor.cadence = e.crps;
+  mySensor.cadence = e.crps*60;
   mySensor.updateScreen();
   mySensor.updateScreen();
 });
