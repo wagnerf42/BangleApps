@@ -822,12 +822,29 @@ class Game {
     this.dungeon_level = 1;
     this.in_menu = false;
     this.locked = false; // disable input if true
+    this.next_screen = null; // if locked we cannot change screen, so we plan changes
     this.messages = [];
     Bangle.setLocked(false);
     let new_game = this;
     ANIMATE_INTERVAL = setInterval(() => {
       new_game.display();
     }, 1000);
+  }
+  unlock() {
+    this.locked = false;
+    if (this.next_screen !== null) {
+      this.screen = this.next_screen;
+      this.next_screen = null;
+      this.display();
+    }
+  }
+  change_screen(screen) {
+    if (this.locked) {
+      this.next_screen = screen;
+    } else {
+      this.screen = screen;
+      this.display();
+    }
   }
   apply_weapon_talent(weapon, modifier) {
     game.player.talents.find((talent) => {
@@ -891,8 +908,7 @@ class Game {
     this.player.hp += hp_increment;
     this.player.stats[ATTACK] += 1;
     this.in_menu = true;
-    this.screen = LEVEL_UP_SCREEN;
-    this.display();
+    this.change_screen(LEVEL_UP_SCREEN);
   }
   msg(message, color) {
     // record message to be shown later.
@@ -911,7 +927,7 @@ class Game {
         .drawString(msg.msg, 0, g.getHeight());
     }
     if (this.messages.length == 0) {
-      game.locked = false;
+      game.unlock();
       return;
     }
 
