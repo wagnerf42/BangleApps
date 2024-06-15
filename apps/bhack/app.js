@@ -478,21 +478,25 @@ class Map {
       rooms.push(room);
     }
     
-    // first, place the exit somewhere not near a wall.
-    // we place it first to be 100% sure it is a free space.
-    let last_room = rooms[rooms.length - 1];
-    this.set_cell(last_room.random_inner_position(this), EXIT);
-    
+    let exit_room = rooms[rooms.length - 1]; 
+    let special_room = null;
     if (this.level % 2 == 0) {
       game.msg("You feel", "#00ff00");
       game.msg("something special", "#00ff00");
-      let special_room = new Room(width, height, 5, 5);
+      special_room = new Room(width, height, 5, 5);
       this.fill_room(special_room);
-      this.fill_special_room(special_room, game.monsters);
       rooms.push(special_room);
     }
     this.generate_corridors(rooms);
     this.fill_borders();
+
+    // first, place the exit somewhere not near a wall.
+    // we place it first to be 100% sure it is a free space.
+    this.set_cell(exit_room.random_inner_position(this), EXIT);
+
+    if (special_room !== null) {
+      this.fill_special_room(special_room, game.monsters);
+    }
 
     let first_room = rooms[0];
     game.player.position = first_room.random_free_position(this);
@@ -601,7 +605,7 @@ class Map {
     for (let y = 1; y < this.height - 1; y++) {
       let good_heights = 0; // how many good heights to the left of above us
       for (let x = 1; x < this.width - 1; x++) {
-        if (counts[x] >= target_height + 1) {
+        if (counts[x] >= target_height + 2) {
           good_heights += 1;
         } else {
           good_heights = 0;
@@ -610,9 +614,9 @@ class Map {
           counts[x] += 1;
         } else {
           counts[x] = 0;
-          if (map[p] == FLOOR && good_heights >= target_width) {
+          if (map[p] == FLOOR && good_heights >= target_width+2) {
             let r = new Room();
-            r.x = x - target_width + 1;
+            r.x = x - target_width;
             r.y = y - target_height - 1;
             r.width = target_width;
             r.height = target_height;
@@ -998,22 +1002,22 @@ class Game {
     } else if (this.screen == MERCHANT_SCREEN) {
       let rarrow = Graphics.createImage(`
    #
-    #    
-######        
-#######
-######                
     #
-   #                      
+######
+#######
+######
+    #
+   #
       `);
 
       let larrow = Graphics.createImage(`
    #
-  #    
- ######       
-#######
- ######               
   #
-   #                      
+ ######
+#######
+ ######
+  #
+   #
       `);
       g.setBgColor(255, 255, 255);
       g.clear();
