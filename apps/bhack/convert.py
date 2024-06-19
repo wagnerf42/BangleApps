@@ -15,7 +15,7 @@ def main():
     generate(special_items, "special_items.png")
     items = [411, 465, 533, 423, 450, 412, 541, 525, 510, 574]
     generate(items, "items.png")
-    misc = [852, 856, 859]
+    misc = [852, 856, 859, 855, 229]
     generate(misc, "misc.png")
     levels = [848, 823, 830, 831, 832, 833, 834, 835, 837, 838, 839, 840, 836]
     generate(levels, "levels.png")
