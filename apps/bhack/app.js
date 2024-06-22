@@ -1375,7 +1375,7 @@ class Game {
         this.player.strength_duration -= 1;
         if (this.player.strength_duration == 0) {
           this.msg("You feel weaker");
-          this.stats[DMG_BONUS] -= 1;
+          this.player.stats[DMG_BONUS] -= 1;
         }
       }
       if (this.player.piety < 1000) {
