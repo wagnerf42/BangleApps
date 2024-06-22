@@ -303,7 +303,7 @@ class Creature {
       } else if (Math.random() < 0.33) {
         return FIRST_SPECIAL + 1; // FOOD
       } else {
-        return FIRST_SPECIAL + randint(2, SPECIAL_ITEMS.length);
+        return FIRST_SPECIAL + randint(2, SPECIAL_ITEMS.length - 1);
       }
     } else {
       return FLOOR;
