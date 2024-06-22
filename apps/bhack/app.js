@@ -21,6 +21,9 @@ const TALENTS = [
   "Aggressive",
   "Careful",
   "Strong",
+  "Pious",
+  "Observant",
+  "Lockpicker",
   "SwordMaster",
   "DaggerFreak",
   "MaceBrute"
@@ -255,6 +258,7 @@ class Creature {
       this.level = 1;
       this.satiation = 400;
       this.piety = 1000;
+      this.piety_increase = 1;
       this.stats = Uint16Array(MONSTERS_STATS[monster_type]);
       this.talents = [];
       this.potions = [1, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -1273,7 +1277,7 @@ class Game {
     } else if (destination_content == CHEST) {
       if (this.map.chest_opened == false) {
         this.map.chest_opened = true;
-        if (randint(1, 100) <= 50) {
+        if (this.player.talents.includes("Lockpicker") || randint(1, 100) <= 50) {
           // TODO: have a talent increasing this
           this.msg("You open the chest", "#00ff00");
           let loot = random_item(this.dungeon_level + 2, destination);
@@ -1341,7 +1345,7 @@ class Game {
         // let's have a 30% chance of finding secrets
         let secret_pos = this.map.secret[1];
         if (destination.x == secret_pos.x && destination.y == secret_pos.y) {
-          if (Math.random() < 0.3) {
+          if (this.player.talents.includes("Observant") || Math.random() < 0.3) {
             this.secret_found();
           }
         }
@@ -1361,7 +1365,7 @@ class Game {
     while (true) {
       this.time += 1;
       if (this.player.piety < 1000) {
-        this.player.piety += 1;
+        this.player.piety += this.player.piety_increase;
       }
       if (this.time % this.player.stats[REGENERATION] == 0) {
         this.player.hp = Math.min(
@@ -1465,6 +1469,8 @@ function add_talent(talent) {
     game.player.stats[DMG_BONUS] += 1;
   } else if (talent == "Careful") {
     game.player.stats[DV] += 1;
+  } else if (talent == "Pious") {
+    game.player.piety_increase = 1.2;
   } else {
     console.log("TODO: talent:", talent);
   }
@@ -1508,10 +1514,9 @@ Bangle.on("swipe", (direction_lr, direction_ud) => {
       { title: "Level Up!", buttons: { Ok: 0 } }
     ).then(() => {
       if (
-        game.player.level % 2 == 0 &&
-        TALENTS.length / 3 >= game.player.level / 2
+        TALENTS.length / 3 >= game.player.level
       ) {
-        let talent_num = game.player.level / 2 - 1;
+        let talent_num = game.player.level - 2;
         let menu = [
           {
             title: TALENTS[talent_num * 3],
