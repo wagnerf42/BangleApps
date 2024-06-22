@@ -1514,7 +1514,7 @@ Bangle.on("swipe", (direction_lr, direction_ud) => {
       { title: "Level Up!", buttons: { Ok: 0 } }
     ).then(() => {
       if (
-        TALENTS.length / 3 >= game.player.level
+        TALENTS.length / 3 >= game.player.level - 1
       ) {
         let talent_num = game.player.level - 2;
         let menu = [
