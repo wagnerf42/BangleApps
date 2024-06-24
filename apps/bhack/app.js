@@ -26,7 +26,10 @@ const TALENTS = [
   "Lockpicker",
   "SwordMaster",
   "DaggerFreak",
-  "MaceBrute"
+  "MaceBrute",
+  "Miser",
+  "Hunter",
+  "Alchemist"
 ];
 
 let ANIMATE_INTERVAL = null;
@@ -300,12 +303,21 @@ class Creature {
     if (Math.random() < 0.4) {
       if (Math.random() < 0.33) {
         return FIRST_SPECIAL; // GOLD
-      } else if (Math.random() < 0.33) {
+      } else if (Math.random() < 0.333) {
         return FIRST_SPECIAL + 1; // FOOD
       } else {
         return FIRST_SPECIAL + randint(2, SPECIAL_ITEMS.length - 1);
       }
     } else {
+      if (Math.random() < 0.2) {
+        if (game.player.talents.includes("Miser")) {
+          return FIRST_SPECIAL;
+        } else if (game.player.talents.includes("Hunter")) {
+          return FIRST_SPECIAL + 1;
+        } else if (game.player.talents.includes("Alchemist")) {
+          return FIRST_SPECIAL + randint(2, SPECIAL_ITEMS.length - 1);
+        }
+      }
       return FLOOR;
     }
   }
