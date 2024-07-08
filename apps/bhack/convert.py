@@ -24,7 +24,7 @@ def main():
     generate(monsters, "monsters.png")
     special_items = [786, 660, 664, 672, 667]
     generate(special_items, "special_items.png")
-    items = [411, 465, 533, 423, 450, 412, 541, 525, 510, 574]
+    items = [411, 465, 533, 423, 450, 412, 541, 525, 510, 574, 503]
     generate(items, "items.png")
     misc = [852, 856, 859, 855, 229, 52, 586, 274]
     generate(misc, "misc.png")
