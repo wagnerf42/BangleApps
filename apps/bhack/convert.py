@@ -20,7 +20,7 @@ def generate(ids, filename):
 
 def main():
     init()
-    monsters = [340, 326, 0, 20, 71, 42, 95, 73]
+    monsters = [340, 326, 0, 20, 71, 42, 95, 113, 73]
     generate(monsters, "monsters.png")
     special_items = [786, 660, 664, 672, 667]
     generate(special_items, "special_items.png")
