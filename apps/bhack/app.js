@@ -142,7 +142,7 @@ let MONSTERS_STATS = [
   new Uint16Array([8, 10, 0, 6, 7, 1, 6, 0, 90, 400, 0, 1, 0]), // Goblin
   new Uint16Array([10, 10, 3, 6, 10, 1, 6, 0, 200, 600, 0, 1, 0]), // Gargoyle
   new Uint16Array([12, 10, 0, 6, 6, 1, 4, 0, 100, 700, 1, 1, 0]), // Spider
-  new Uint16Array([15, 10, 1, 8, 6, 1, 6, 0, 100, 800, 0, 1, 3]), // Leech
+  new Uint16Array([15, 12, 1, 8, 6, 1, 6, 0, 100, 800, 0, 1, 3]), // Leech
   new Uint16Array([20, 12, 1, 12, 6, 1, 8, 0, 100, 1400, 0, 1, 0]) // Orc
 ];
 
@@ -405,7 +405,7 @@ class Creature {
         target.poisoned = this.stats[POISON];
         if (this.stats[DRAINING] > 0) {
           this.hp = Math.min(this.stats[MAX_HP], Math.ceil(this.hp + damages * 3 / this.stats[DRAINING]));
-          if (target.monster_type != 0) {
+          if (target.monster_type == 0) {
             game.msg(target.name() + "heals", "#ff6000");
           } else {
             game.msg("You drain the " + target.name(), "#00ff00");
