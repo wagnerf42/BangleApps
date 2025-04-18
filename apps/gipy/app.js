@@ -1438,7 +1438,6 @@ function start_gipy(path, maps, interests, heights) {
   status = new Status(path, maps, interests, heights);
   console.log("done creating status");
 
-  let path = status.path;
   function options_menu() {
     status.activate();
     if (in_menu) {
