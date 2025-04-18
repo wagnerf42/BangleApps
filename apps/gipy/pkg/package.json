@@ -1,12 +1,15 @@
 {
   "name": "gps",
+  "type": "module",
   "version": "0.1.0",
   "files": [
     "gps_bg.wasm",
     "gps.js",
     "gps.d.ts"
   ],
-  "module": "gps.js",
+  "main": "gps.js",
   "types": "gps.d.ts",
-  "sideEffects": false
+  "sideEffects": [
+    "./snippets/*"
+  ]
 }

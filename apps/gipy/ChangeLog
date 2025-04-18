@@ -141,3 +141,13 @@
 0.26: Add option to plot openstmap if installed
 
 0.27: Support for large paths (grid sizes > 65k)
+
+0.28:
+	* deduplicating openstreetmap ways (~1% file size decrease)
+	* home-made polygon computation :
+		- lighter openstreetmap requests 
+		- gives correct results on very large path (older algorithm was sometimes
+		incorrect and tiles were missing)
+		- better pre-visualization on the map
+	* long touch to bring up menu
+	* exit button in menu
