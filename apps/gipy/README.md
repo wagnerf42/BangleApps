@@ -125,8 +125,7 @@ Few settings for now (feel free to suggest me more) :
 - brightness : how bright should screen be ? (by default 0.5, again saving power)
 - power lcd off (disabled by default): turn lcd off when inactive to save power. the watch will wake up when reaching points,
 when you touch the screen and when speed is below 13km/h.
-- powersave by default: when gipy starts is powersaving activated ? (see below)
-- sleep between waypoints: instead of powersaving between points save power between waypoints (crossroads). this way you can save more. waypoints autodetection is WIP.
+- powersave by default: when gipy starts is powersaving activated ?
 
 ### Powersaving
 
@@ -147,7 +146,7 @@ The algorithm works in the following ways :
 
 Activation events are the following :
 
-- you are near (< 100m) the next point (only waypoints of *sleep between waypoints* is on) on path
+- any interest point is on the main tile
 - you are slow (< *wake-up speed* setting (13 km/h by default))
 - you are lost
 - you press the button / touch the screen
@@ -156,7 +155,7 @@ Activation events are the following :
 Power saving has been tested on a very long trip with several benefits
 
 - longer battery life
-- waking up near path points will attract your attention more easily when needed
+- waking up near crossroads will attract your attention more easily when needed
 
 ### Caveats
 

@@ -151,3 +151,4 @@
 		- better pre-visualization on the map
 	* long touch to bring up menu
 	* exit button in menu
+	* better wake up from deep sleep : we now wake up on interests

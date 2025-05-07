@@ -1,3 +1,4 @@
+// let fake_gps_point = 0;
 let simulated = false;
 let displaying = false;
 let in_menu = false;
@@ -33,7 +34,6 @@ var settings = Object.assign(
     disable_bluetooth: false,
     power_lcd_off: false,
     powersave_by_default: false,
-    sleep_between_waypoints: false,
   },
   s.readJSON("gipy.json", true) || {}
 );
@@ -331,6 +331,20 @@ class Interests {
     return [this, offset];
   }
 
+  non_empty_xtiles(absolute_tile_x, absolute_tile_y) {
+    // test if tile or left or right tile contains an interest
+    let tile_x = absolute_tile_x - this.first_tile[0];
+    let tile_y = absolute_tile_y - this.first_tile[1];
+    let min_tile_x = Math.max(tile_x - 1, 0);
+    let max_tile_x = Math.min(tile_x + 1, this.grid_size[0]-1);
+    let y_offset = tile_y * this.grid_size[0];
+    let min_tile_num = min_tile_x + y_offset;
+    let max_tile_num = max_tile_x + y_offset;
+    let offset = this.offsets.tile_start_offset(min_tile_num);
+    let upper_limit = this.offsets.tile_end_offset(max_tile_num);
+    return offset != upper_limit;
+  }
+
   add_to_tile_image(img, absolute_tile_x, absolute_tile_y) {
     let tile_x = absolute_tile_x - this.first_tile[0];
     let tile_y = absolute_tile_y - this.first_tile[1];
@@ -372,9 +386,9 @@ class Status {
     this.adjusted_cos_direction = Math.cos(-Math.PI / 2.0);
     this.adjusted_sin_direction = Math.sin(-Math.PI / 2.0);
     this.zoomed_in = true;
+    this.recently_buzzed_tiles = []; // remember for which tiled we buzzed
 
     this.current_segment = null; // which segment is closest
-    this.reaching = null; // which waypoint are we reaching ?
     this.distance_to_next_point = null; // how far are we from next point ?
     this.projected_point = null;
     this.reset_images_cache();
@@ -545,7 +559,6 @@ class Status {
         });
       }
     }
-    this.check_activity(); // if we don't move or are in menu we should stay on
 
     this.adjusted_cos_direction = Math.cos(-direction - Math.PI / 2.0);
     this.adjusted_sin_direction = Math.sin(-direction - Math.PI / 2.0);
@@ -561,6 +574,37 @@ class Status {
       new_position.lon + cos_direction * this.instant_speed * 0.00001,
       new_position.lat + sin_direction * this.instant_speed * 0.00001
     );
+    // check if something interesting is on a nearby tile
+    // and consequently wake up display
+    let tile_x_coord = this.displayed_position.lon / this.maps[0].side;
+    let tile_y_coord = this.displayed_position.lat / this.maps[0].side;
+    let absolute_tile_x = Math.floor(tile_x_coord);
+    let absolute_tile_y = Math.floor(tile_y_coord);
+    let something_interesting = false;
+    for (let yd = -1; yd <= 1; yd++) {
+      let tile_y = absolute_tile_y + yd;
+      if (tile_y < this.grid_size[1] && tile_y >= 0) {
+        if (this.interests.non_empty_xtiles(absolute_tile_x, tile_y)) {
+          something_interesting = true;
+          break;
+        }
+      }
+    }
+    if (something_interesting) {
+      this.activate();
+      if (settings.buzz_on_turns) {
+        let tile_id = absolute_tile_y * 10000 + absolute_tile_x;
+        if (!this.recently_buzzed_tiles.includes(tile_id)) {
+          this.recently_buzzed_tiles.push(tile_id);
+          Bangle.buzz(); // interest on tile
+          if (this.recently_buzzed_tiles.length == 4) {
+            this.recently_buzzed_tiles.shift();
+          }
+        }
+      }
+    }
+
+    this.check_activity(); // if we don't move or are in menu we should stay on
 
     if (this.path !== null) {
       // detect segment we are on now
@@ -602,12 +646,6 @@ class Status {
 
       this.current_segment = next_segment;
 
-      // check if we are nearing the next point on our path and alert the user
-      let next_point = this.current_segment + (go_backwards ? 0 : 1);
-      this.distance_to_next_point = Math.ceil(
-        this.position.distance(this.path.point(next_point))
-      );
-
       // disable gps when far from next point and locked
       // if (Bangle.isLocked() && !settings.keep_gps_alive) {
       //   let time_to_next_point =
@@ -619,22 +657,6 @@ class Status {
       //     }, time_to_next_point);
       //   }
       // }
-      let reaching_waypoint = this.path.is_waypoint(next_point);
-      if (this.distance_to_next_point <= 100) {
-        if (reaching_waypoint || !settings.sleep_between_waypoints) {
-          this.activate();
-        }
-
-        if (this.reaching != next_point) {
-          this.reaching = next_point;
-          if (reaching_waypoint && settings.buzz_on_turns) {
-            Bangle.buzz();
-            setTimeout(() => Bangle.buzz(), 500);
-            setTimeout(() => Bangle.buzz(), 1000);
-            setTimeout(() => Bangle.buzz(), 1500);
-          }
-        }
-      }
     }
 
     // abort most frames if inactive
@@ -783,12 +805,12 @@ class Status {
 
     for (let x = -d; x <= d; x++) {
       for (let y = -d; y <= d; y++) {
-        let img = this.tile_image(absolute_tile_x + x, absolute_tile_y + y);
+        let tx = absolute_tile_x + x;
+        let ty = absolute_tile_y + y;
+        let img = this.tile_image(tx, ty);
 
-        let screen_x =
-          (absolute_tile_x + x + 0.5 - tile_x_coord) * diagonal + 3;
-        let screen_y =
-          -(absolute_tile_y + y + 0.5 - tile_y_coord) * diagonal - 3;
+        let screen_x = (tx + 0.5 - tile_x_coord) * diagonal + 3;
+        let screen_y = -(ty + 0.5 - tile_y_coord) * diagonal - 3;
 
         let rotated_x = screen_x * cos_direction - screen_y * sin_direction;
         let rotated_y = screen_x * sin_direction + screen_y * cos_direction;
@@ -1067,15 +1089,6 @@ class Status {
       0,
       g.getHeight() - 32
     );
-
-    // display various indicators
-    if (this.distance_to_next_point <= 100) {
-      if (this.path.is_waypoint(this.reaching)) {
-        g.setColor(0.0, 1.0, 0.0)
-          .setFont("6x15")
-          .drawString("turn", g.getWidth() - 50, 30);
-      }
-    }
   }
   display_path() {
     // don't display all segments, only those neighbouring current segment
@@ -1367,8 +1380,6 @@ class Point {
     return new Point(lon, lat);
   }
 }
-
-//let fake_gps_point = 0;
 
 function drawMenu() {
   const menu = {
