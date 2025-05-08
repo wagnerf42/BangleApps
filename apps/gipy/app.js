@@ -583,7 +583,7 @@ class Status {
     let something_interesting = false;
     for (let yd = -1; yd <= 1; yd++) {
       let tile_y = absolute_tile_y + yd;
-      if (tile_y < this.grid_size[1] && tile_y >= 0) {
+      if (tile_y < this.interests.grid_size[1] && tile_y >= 0) {
         if (this.interests.non_empty_xtiles(absolute_tile_x, tile_y)) {
           something_interesting = true;
           break;
