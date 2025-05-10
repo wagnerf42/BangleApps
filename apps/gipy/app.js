@@ -335,6 +335,9 @@ class Interests {
     // test if tile or left or right tile contains an interest
     let tile_x = absolute_tile_x - this.first_tile[0];
     let tile_y = absolute_tile_y - this.first_tile[1];
+    if (tile_y < 0 || tile_y >= this.grid_size[1]) {
+        return false;
+    }
     let min_tile_x = Math.max(tile_x - 1, 0);
     let max_tile_x = Math.min(tile_x + 1, this.grid_size[0]-1);
     let y_offset = tile_y * this.grid_size[0];
@@ -583,11 +586,9 @@ class Status {
     let something_interesting = false;
     for (let yd = -1; yd <= 1; yd++) {
       let tile_y = absolute_tile_y + yd;
-      if (tile_y < this.interests.grid_size[1] && tile_y >= 0) {
-        if (this.interests.non_empty_xtiles(absolute_tile_x, tile_y)) {
-          something_interesting = true;
-          break;
-        }
+      if (this.interests.non_empty_xtiles(absolute_tile_x, tile_y)) {
+        something_interesting = true;
+        break;
       }
     }
     if (something_interesting) {
@@ -645,6 +646,11 @@ class Status {
       }
 
       this.current_segment = next_segment;
+
+      let next_point = this.current_segment + (go_backwards ? 0 : 1);
+      this.distance_to_next_point = Math.ceil(
+        this.position.distance(this.path.point(next_point))
+      );
 
       // disable gps when far from next point and locked
       // if (Bangle.isLocked() && !settings.keep_gps_alive) {
@@ -1668,7 +1674,7 @@ function start_gipy(path, maps, interests, heights) {
     //     );
     //     let pos = p1.times(1 - fake_gps_point).plus(p2.times(fake_gps_point));
     //     if (fake_gps_point < 1) {
-    //       fake_gps_point += 0.05;
+    //       fake_gps_point += 0.01;
     //     }
     //     status.update_position(pos);
     //   } else {
@@ -1696,7 +1702,7 @@ function start_gipy(path, maps, interests, heights) {
     //     status.update_position(pos);
     //   }
     // }
-
+    // 
     // setInterval(simulate_gps, 500, status);
   } else {
     status.activate();
